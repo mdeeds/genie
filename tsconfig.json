@@ -6,6 +6,7 @@
     // TFJS doesn't compile in Typescript, so we need to skip the checks.
     // https://www.tensorflow.org/js/tutorials/setup
     "skipLibCheck": true,
+    "sourceRoot": "ts",
     "outDir": "src",
   }
 }
