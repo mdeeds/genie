@@ -10,15 +10,62 @@ var __webpack_unused_export__;
 __webpack_unused_export__ = ({ value: true });
 const modelStrategy_1 = __webpack_require__(910);
 const oneDie_1 = __webpack_require__(175);
+const randomStrategy_1 = __webpack_require__(979);
 const runGame_1 = __webpack_require__(9);
 const g = new oneDie_1.OneDie();
-const s = new modelStrategy_1.ModelStrategy(g);
+const s = new randomStrategy_1.RandomStrategy(g);
 console.log("Starting.");
 const runner = new runGame_1.RunGame();
-for (let i = 0; i < 10; ++i) {
-    runner.run(g, s);
+const trainingStates = [];
+const trainingMoves = [];
+runner.collectWinData(g, s, trainingStates, trainingMoves);
+console.log(`Collected ${trainingMoves.length} moves.`);
+const m = new modelStrategy_1.ModelStrategy(g);
+function makeCanvas(strategy) {
+    const pixelData = new Uint8ClampedArray(30 * 30 * 4);
+    for (let x = 0; x < 30; ++x) {
+        for (let y = 0; y < 30; ++y) {
+            const state = new Float32Array([x, 2, y]);
+            const move = strategy.getMove(state);
+            const i = x * 4 + y * 4 * 30;
+            pixelData[i + 0] = 255 * move[0];
+            pixelData[i + 1] = (move[0] > move[1]) ? 255 : 0;
+            pixelData[i + 2] = 255 * move[1];
+            pixelData[i + 3] = 255;
+        }
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = 30;
+    canvas.height = 30;
+    canvas.style.setProperty('width', '150px');
+    canvas.style.setProperty('height', '150px');
+    const ctx = canvas.getContext('2d');
+    ctx.putImageData(new ImageData(pixelData, 30, 30), 0, 0);
+    const body = document.getElementsByTagName('body')[0];
+    body.appendChild(canvas);
 }
-console.log("Done.");
+makeCanvas(s);
+makeCanvas(m);
+function loop(iterations) {
+    if (iterations === 0) {
+        console.log("Done");
+        return;
+    }
+    m.train(trainingStates, trainingMoves).then((history) => {
+        makeCanvas(m);
+        const losses = history.history['loss'];
+        console.log(`First loss: ${losses[0]}`);
+        console.log(`Last loss: ${losses[losses.length - 1]}`);
+        while (trainingStates.length > 100) {
+            trainingStates.shift();
+            trainingMoves.shift();
+        }
+        runner.collectWinData(g, s, trainingStates, trainingMoves);
+        runner.collectWinData(g, m, trainingStates, trainingMoves);
+        setTimeout(() => { loop(iterations - 1); });
+    });
+}
+loop(10);
 //# sourceMappingURL=index.js.map
 
 /***/ }),
@@ -33,20 +80,28 @@ exports.ModelStrategy = void 0;
 const tf = __webpack_require__(581);
 class ModelStrategy {
     constructor(game) {
+        this.stateSize = game.getStateSize();
+        this.moveSize = game.getMoveSize();
         const input = tf.input({ shape: [game.getStateSize()] });
         const l1 = tf.layers.dense({ units: 2 }).apply(input);
         const l2 = tf.layers.dense({ units: 2 }).apply(l1);
         const o = tf.layers.dense({ units: game.getMoveSize() })
             .apply(l2);
         this.model = tf.model({ inputs: input, outputs: o });
+        this.model.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
     }
     getMove(state) {
-        const inputTensor = tf.tensor(state, [1, state.length]);
+        const inputTensor = tf.tensor(state, [1, this.stateSize]);
         const moveTensor = this.model.predict(inputTensor);
         const move = new Float32Array(moveTensor.dataSync());
         inputTensor.dispose();
         moveTensor.dispose();
         return move;
+    }
+    train(states, moves) {
+        const x = tf.tensor(states, [states.length, this.stateSize]);
+        const y = tf.tensor(moves, [moves.length, this.moveSize]);
+        return this.model.fit(x, y, { epochs: 50 });
     }
 }
 exports.ModelStrategy = ModelStrategy;
@@ -63,11 +118,6 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.OneDie = void 0;
 class OneDie {
     constructor(roundCount = 5, winningScore = 25) {
-        this.kGoIndex = 0;
-        this.kEndIndex = 1;
-        this.kScoreIndex = 0;
-        this.kRoundIndex = 1;
-        this.kTotalScore = 2;
         this.roundCount = roundCount;
         this.winningScore = winningScore;
     }
@@ -87,36 +137,64 @@ class OneDie {
     }
     applyMove(state, move) {
         const newState = new Float32Array(state);
-        if (move[this.kGoIndex] > move[this.kEndIndex]) {
+        if (move[OneDie.kGoIndex] > move[OneDie.kEndIndex]) {
             // "GO" move
             const newRoll = this.getDieRoll();
             if (newRoll === 1) {
-                newState[this.kScoreIndex] = 0;
-                newState[this.kRoundIndex] += 1;
+                newState[OneDie.kScoreIndex] = 0;
+                newState[OneDie.kRoundIndex] += 1;
             }
             else {
-                newState[this.kScoreIndex] += newRoll;
+                newState[OneDie.kScoreIndex] += newRoll;
             }
         }
         else {
             // "End" move
-            newState[this.kTotalScore] += newState[this.kScoreIndex];
-            newState[this.kRoundIndex] += 1;
-            newState[this.kScoreIndex] = 0;
+            newState[OneDie.kTotalScore] += newState[OneDie.kScoreIndex];
+            newState[OneDie.kRoundIndex] += 1;
+            newState[OneDie.kScoreIndex] = 0;
         }
         return newState;
     }
     isWinning(state) {
-        return (state[this.kRoundIndex] == this.roundCount &&
-            state[this.kTotalScore] >= this.winningScore);
+        return (state[OneDie.kRoundIndex] == this.roundCount &&
+            state[OneDie.kTotalScore] >= this.winningScore);
     }
     isLosing(state) {
-        return (state[this.kRoundIndex] == this.roundCount &&
-            state[this.kTotalScore] < this.winningScore);
+        return (state[OneDie.kRoundIndex] == this.roundCount &&
+            state[OneDie.kTotalScore] < this.winningScore);
     }
 }
 exports.OneDie = OneDie;
+OneDie.kGoIndex = 0;
+OneDie.kEndIndex = 1;
+OneDie.kScoreIndex = 0;
+OneDie.kRoundIndex = 1;
+OneDie.kTotalScore = 2;
 //# sourceMappingURL=oneDie.js.map
+
+/***/ }),
+
+/***/ 979:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.RandomStrategy = void 0;
+class RandomStrategy {
+    constructor(g) {
+        this.moveSize = g.getMoveSize();
+    }
+    getMove(state) {
+        const move = new Float32Array(this.moveSize);
+        const moveNumber = Math.trunc(Math.random() * this.moveSize);
+        move[moveNumber] = 1.0;
+        return move;
+    }
+}
+exports.RandomStrategy = RandomStrategy;
+//# sourceMappingURL=randomStrategy.js.map
 
 /***/ }),
 
@@ -130,13 +208,30 @@ exports.RunGame = void 0;
 class RunGame {
     constructor() {
     }
-    run(game, strategy) {
+    run(game, strategy, states, moves) {
         let state = game.getInitialState();
         while (!game.isWinning(state) && !game.isLosing(state)) {
             const move = strategy.getMove(state);
+            states.push(state);
+            moves.push(move);
             state = game.applyMove(state, move);
         }
-        console.log(`Final result: ${game.isWinning(state)}`);
+        return game.isWinning(state);
+    }
+    collectWinData(game, strategy, winningStates, winningMoves) {
+        let winCount = 0;
+        const gameCount = 200;
+        for (let i = 0; i < gameCount; ++i) {
+            const states = [];
+            const moves = [];
+            const isWin = this.run(game, strategy, states, moves);
+            if (isWin) {
+                winningStates.push(...states);
+                winningMoves.push(...moves);
+                ++winCount;
+            }
+        }
+        console.log(`Win rate: ${(winCount / gameCount).toFixed(3)}`);
     }
 }
 exports.RunGame = RunGame;
