@@ -1,12 +1,12 @@
 import { Game } from "./game";
 
 export class OneDie implements Game {
-  private kGoIndex = 0;
-  private kEndIndex = 1;
+  static kGoIndex = 0;
+  static kEndIndex = 1;
 
-  private kScoreIndex = 0;
-  private kRoundIndex = 1;
-  private kTotalScore = 2;
+  static kScoreIndex = 0;
+  static kRoundIndex = 1;
+  static kTotalScore = 2;
 
   private roundCount: number;
   private winningScore: number;
@@ -35,30 +35,30 @@ export class OneDie implements Game {
 
   applyMove(state: Float32Array, move: Float32Array): Float32Array {
     const newState = new Float32Array(state);
-    if (move[this.kGoIndex] > move[this.kEndIndex]) {
+    if (move[OneDie.kGoIndex] > move[OneDie.kEndIndex]) {
       // "GO" move
       const newRoll = this.getDieRoll();
       if (newRoll === 1) {
-        newState[this.kScoreIndex] = 0;
-        newState[this.kRoundIndex] += 1;
+        newState[OneDie.kScoreIndex] = 0;
+        newState[OneDie.kRoundIndex] += 1;
       } else {
-        newState[this.kScoreIndex] += newRoll;
+        newState[OneDie.kScoreIndex] += newRoll;
       }
     } else {
       // "End" move
-      newState[this.kTotalScore] += newState[this.kScoreIndex];
-      newState[this.kRoundIndex] += 1;
-      newState[this.kScoreIndex] = 0;
+      newState[OneDie.kTotalScore] += newState[OneDie.kScoreIndex];
+      newState[OneDie.kRoundIndex] += 1;
+      newState[OneDie.kScoreIndex] = 0;
     }
     return newState;
   }
 
   isWinning(state: Float32Array) {
-    return (state[this.kRoundIndex] == this.roundCount &&
-      state[this.kTotalScore] >= this.winningScore);
+    return (state[OneDie.kRoundIndex] == this.roundCount &&
+      state[OneDie.kTotalScore] >= this.winningScore);
   }
   isLosing(state: Float32Array) {
-    return (state[this.kRoundIndex] == this.roundCount &&
-      state[this.kTotalScore] < this.winningScore);
+    return (state[OneDie.kRoundIndex] == this.roundCount &&
+      state[OneDie.kTotalScore] < this.winningScore);
   }
 }

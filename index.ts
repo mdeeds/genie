@@ -3,9 +3,10 @@ import { Game } from "./game";
 import { OneDie } from "./oneDie";
 import { RandomStrategy } from "./randomStrategy";
 import { RunGame } from "./runGame";
+import { GoodStrategy } from "./goodStrategy";
 
 const g: Game = new OneDie();
-const s = new ModelStrategy(g);
+const s = new GoodStrategy();
 
 console.log("Starting.");
 
