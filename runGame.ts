@@ -33,5 +33,6 @@ export class RunGame {
       }
     }
     console.log(`Win rate: ${(winCount / gameCount).toFixed(3)}`);
+    return winCount / gameCount;
   }
 }

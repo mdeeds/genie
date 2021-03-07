@@ -20,6 +20,15 @@ console.log(`Collected ${trainingMoves.length} moves.`);
 
 const m: ModelStrategy = new ModelStrategy(g);
 
+const resultDiv = document.createElement('div');
+const body = document.getElementsByTagName('body')[0];
+body.append(resultDiv);
+
+function addRow(trainingSession: number, winRate: number) {
+  const row = document.createElement('div');
+  row.innerText = `${trainingSession}, ${winRate}`;
+  resultDiv.appendChild(row);
+}
 
 function makeCanvas(strategy: Strategy) {
   const pixelData = new Uint8ClampedArray(30 * 30 * 4);
@@ -47,6 +56,8 @@ function makeCanvas(strategy: Strategy) {
 makeCanvas(s);
 makeCanvas(m);
 
+var trainingSession = 0;
+
 function loop(iterations: number) {
   if (iterations === 0) {
     console.log("Done");
@@ -63,9 +74,12 @@ function loop(iterations: number) {
       trainingMoves.shift();
     }
     runner.collectWinData(g, s, trainingStates, trainingMoves);
-    runner.collectWinData(g, m, trainingStates, trainingMoves);
+    const winRate = runner.collectWinData(g, m, trainingStates, trainingMoves);
+    ++trainingSession;
+    addRow(trainingSession, winRate);
+
     setTimeout(() => { loop(iterations - 1); });
   });
 }
 
-loop(10);
+loop(100);
