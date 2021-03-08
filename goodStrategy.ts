@@ -2,11 +2,14 @@ import { Strategy } from "./strategy";
 import { OneDie } from "./oneDie";
 
 export class GoodStrategy implements Strategy {
-  constructor() { }
+  private game: OneDie;
+  constructor(game: OneDie) {
+    this.game = game;
+  }
 
   getMove(state: Float32Array): Float32Array {
-    const move = new Float32Array(2);
-    if (state[OneDie.kScoreIndex] >= 5 || state[OneDie.kTotalScore] > 25) {
+    const move = new Float32Array(this.game.getMoveSize());
+    if (state[OneDie.kScoreIndex] >= 12 || state[OneDie.kTotalScore] > 25) {
       move[OneDie.kEndIndex] = 1.0;
     } else {
       move[OneDie.kGoIndex] = 1.0;

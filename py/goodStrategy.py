@@ -4,9 +4,15 @@ import numpy as np
 
 from oneDie import OneDie
 
+
 class GoodStrategy:
+    game = None
+
+    def __init__(self, g):
+        self.game = g
+
     def getMove(self, state):
-        move = np.zeros(OneDie.getMoveSize(self))
+        move = np.zeros(self.game.getMoveSize())
         # if (state[OneDie.kScoreIndex] >= 5 or state[OneDie.kTotalScore] > 25):
         if (state[OneDie.kScoreIndex] >= 12 or state[OneDie.kTotalScore] > 25):
             # if random.random() > 0.5:
