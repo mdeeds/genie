@@ -1,6 +1,9 @@
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 
 module.exports = {
+  resolve: {
+    fallback: { "os": false }
+  },
   optimization: {
     minimize: false,
   },
