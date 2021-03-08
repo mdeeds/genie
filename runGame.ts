@@ -6,13 +6,27 @@ export class RunGame {
   constructor() {
   }
 
+  private oneHotMove(move: Float32Array) {
+    let maxValue = -1000;
+    let maxIndex = 0;
+    for (let i = 0; i < move.length; ++i) {
+      if (move[i] > maxValue) {
+        maxValue = move[i];
+        maxIndex = i;
+      }
+    }
+    const result = new Float32Array(move.length);
+    result[maxIndex] = 1.0;
+    return result;
+  }
+
   run(game: Game, strategy: Strategy,
     states: Float32Array[], moves: Float32Array[]) {
     let state = game.getInitialState();
     while (!game.isWinning(state) && !game.isLosing(state)) {
       const move = strategy.getMove(state);
       states.push(state);
-      moves.push(move);
+      moves.push(this.oneHotMove(move));
       state = game.applyMove(state, move);
     }
     return game.isWinning(state);

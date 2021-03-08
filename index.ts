@@ -30,11 +30,11 @@ function addRow(trainingSession: number, winRate: number) {
   resultDiv.appendChild(row);
 }
 
-function makeCanvas(strategy: Strategy) {
+function makeCanvas(strategy: Strategy, round: number) {
   const pixelData = new Uint8ClampedArray(30 * 30 * 4);
   for (let x = 0; x < 30; ++x) {
     for (let y = 0; y < 30; ++y) {
-      const state = new Float32Array([x, 2, y]);
+      const state = new Float32Array([x, round, y]);
       const move = strategy.getMove(state);
       const i = x * 4 + y * 4 * 30;
       pixelData[i + 0] = 255 * move[0];
@@ -50,11 +50,21 @@ function makeCanvas(strategy: Strategy) {
   canvas.style.setProperty('height', '150px');
   const ctx = canvas.getContext('2d');
   ctx.putImageData(new ImageData(pixelData, 30, 30), 0, 0);
-  const body = document.getElementsByTagName('body')[0];
-  body.appendChild(canvas);
+  return canvas;
 }
-makeCanvas(s);
-makeCanvas(m);
+
+function makeCanvasSet(strategy: Strategy) {
+  const body = document.getElementsByTagName('body')[0];
+  const div = document.createElement('div');
+  body.appendChild(div);
+
+  for (let r = 0; r < 5; ++r) {
+    const canvas = makeCanvas(strategy, r);
+    div.appendChild(canvas);
+  }
+}
+
+makeCanvasSet(s);
 
 var trainingSession = 0;
 
@@ -65,15 +75,14 @@ function loop(iterations: number) {
   }
 
   m.train(trainingStates, trainingMoves).then((history) => {
-    makeCanvas(m);
+    makeCanvasSet(m);
     const losses = history.history['loss'] as number[];
     console.log(`First loss: ${losses[0]}`);
     console.log(`Last loss: ${losses[losses.length - 1]}`);
-    while (trainingStates.length > 100) {
+    while (trainingStates.length > 400) {
       trainingStates.shift();
       trainingMoves.shift();
     }
-    runner.collectWinData(g, s, trainingStates, trainingMoves);
     const winRate = runner.collectWinData(g, m, trainingStates, trainingMoves);
     ++trainingSession;
     addRow(trainingSession, winRate);
@@ -82,4 +91,4 @@ function loop(iterations: number) {
   });
 }
 
-loop(100);
+setTimeout(() => { console.log("Begin loop."); loop(100); }, 1000);
