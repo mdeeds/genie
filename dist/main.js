@@ -29,11 +29,11 @@ function addRow(trainingSession, winRate) {
     row.innerText = `${trainingSession}, ${winRate}`;
     resultDiv.appendChild(row);
 }
-function makeCanvas(strategy) {
+function makeCanvas(strategy, round) {
     const pixelData = new Uint8ClampedArray(30 * 30 * 4);
     for (let x = 0; x < 30; ++x) {
         for (let y = 0; y < 30; ++y) {
-            const state = new Float32Array([x, 2, y]);
+            const state = new Float32Array([x, round, y]);
             const move = strategy.getMove(state);
             const i = x * 4 + y * 4 * 30;
             pixelData[i + 0] = 255 * move[0];
@@ -49,11 +49,18 @@ function makeCanvas(strategy) {
     canvas.style.setProperty('height', '150px');
     const ctx = canvas.getContext('2d');
     ctx.putImageData(new ImageData(pixelData, 30, 30), 0, 0);
-    const body = document.getElementsByTagName('body')[0];
-    body.appendChild(canvas);
+    return canvas;
 }
-makeCanvas(s);
-makeCanvas(m);
+function makeCanvasSet(strategy) {
+    const body = document.getElementsByTagName('body')[0];
+    const div = document.createElement('div');
+    body.appendChild(div);
+    for (let r = 0; r < 5; ++r) {
+        const canvas = makeCanvas(strategy, r);
+        div.appendChild(canvas);
+    }
+}
+makeCanvasSet(s);
 var trainingSession = 0;
 function loop(iterations) {
     if (iterations === 0) {
@@ -61,22 +68,21 @@ function loop(iterations) {
         return;
     }
     m.train(trainingStates, trainingMoves).then((history) => {
-        makeCanvas(m);
+        makeCanvasSet(m);
         const losses = history.history['loss'];
         console.log(`First loss: ${losses[0]}`);
         console.log(`Last loss: ${losses[losses.length - 1]}`);
-        while (trainingStates.length > 100) {
+        while (trainingStates.length > 400) {
             trainingStates.shift();
             trainingMoves.shift();
         }
-        runner.collectWinData(g, s, trainingStates, trainingMoves);
         const winRate = runner.collectWinData(g, m, trainingStates, trainingMoves);
         ++trainingSession;
         addRow(trainingSession, winRate);
         setTimeout(() => { loop(iterations - 1); });
     });
 }
-loop(100);
+setTimeout(() => { console.log("Begin loop."); loop(100); }, 1000);
 //# sourceMappingURL=index.js.map
 
 /***/ }),
@@ -89,22 +95,35 @@ loop(100);
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ModelStrategy = void 0;
 const tf = __webpack_require__(581);
+// require('@tensorflow/tfjs-backend-wasm');
 class ModelStrategy {
-    constructor(game) {
+    // Adding noise to the moves results in non-deterministic plays
+    // when the underlying model is unsure.  This allows us to produce
+    // training data for multiple options when unsure.
+    constructor(game, moveNoise = 0.05) {
         this.stateSize = game.getStateSize();
         this.moveSize = game.getMoveSize();
-        const input = tf.input({ shape: [game.getStateSize()] });
-        const l1 = tf.layers.dense({ units: 2 }).apply(input);
-        const l2 = tf.layers.dense({ units: 2 }).apply(l1);
-        const o = tf.layers.dense({ units: game.getMoveSize() })
-            .apply(l2);
-        this.model = tf.model({ inputs: input, outputs: o });
-        this.model.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
+        this.moveNoise = moveNoise;
+        tf.setBackend('cpu').then(() => {
+            const input = tf.input({ shape: [game.getStateSize()] });
+            const l1 = tf.layers.dense({ units: 2 }).apply(input);
+            const l2 = tf.layers.dense({ units: 2 }).apply(l1);
+            const o = tf.layers.dense({
+                units: game.getMoveSize(),
+                activation: 'hardSigmoid',
+            }).apply(l2);
+            this.model = tf.model({ inputs: input, outputs: o });
+            this.model.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
+            console.log("Compiled.");
+        });
     }
     getMove(state) {
         const inputTensor = tf.tensor(state, [1, this.stateSize]);
         const moveTensor = this.model.predict(inputTensor);
         const move = new Float32Array(moveTensor.dataSync());
+        for (let i = 0; i < move.length; ++i) {
+            move[i] += (Math.random() - 0.5) * this.moveNoise;
+        }
         inputTensor.dispose();
         moveTensor.dispose();
         return move;
@@ -128,16 +147,17 @@ exports.ModelStrategy = ModelStrategy;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.OneDie = void 0;
 class OneDie {
-    constructor(roundCount = 5, winningScore = 25) {
+    constructor(roundCount = 5, winningScore = 25, numberOfPlayers = 1) {
         this.roundCount = roundCount;
         this.winningScore = winningScore;
+        this.numberOfPlayers = numberOfPlayers;
     }
     getInitialState() {
-        return new Float32Array(3);
+        return new Float32Array(OneDie.kStatePerPlayer * this.numberOfPlayers);
     }
     // [ current score, current round, totalScore]
     getStateSize() {
-        return 3;
+        return OneDie.kStatePerPlayer * this.numberOfPlayers;
     }
     // There are two possible moves: go or end round.
     getMoveSize() {
@@ -147,7 +167,7 @@ class OneDie {
         return 1 + Math.trunc(Math.random() * 6);
     }
     applyMove(state, move) {
-        const newState = new Float32Array(state);
+        const newState = state.slice(0, OneDie.kStatePerPlayer);
         if (move[OneDie.kGoIndex] > move[OneDie.kEndIndex]) {
             // "GO" move
             const newRoll = this.getDieRoll();
@@ -165,15 +185,39 @@ class OneDie {
             newState[OneDie.kRoundIndex] += 1;
             newState[OneDie.kScoreIndex] = 0;
         }
-        return newState;
+        // Result state is shifted by one player to the left.  The next active
+        // player is placed at the front, and the current player is placed at the
+        // end.
+        const resultState = new Float32Array(this.getStateSize());
+        const otherPlayerStateSize = (this.numberOfPlayers - 1) * OneDie.kStatePerPlayer;
+        for (let i = 0; i < otherPlayerStateSize; ++i) {
+            resultState[i] = state[i + OneDie.kStatePerPlayer];
+        }
+        for (let i = 0; i < OneDie.kStatePerPlayer; ++i) {
+            resultState[i + otherPlayerStateSize] = newState[i];
+        }
+        return resultState;
+    }
+    isWinningAtOffset(state, offset) {
+        return (state[OneDie.kRoundIndex + offset] == this.roundCount &&
+            state[OneDie.kTotalScore + offset] >= this.winningScore);
     }
     isWinning(state) {
-        return (state[OneDie.kRoundIndex] == this.roundCount &&
-            state[OneDie.kTotalScore] >= this.winningScore);
+        return this.isWinningAtOffset(state, 0);
     }
     isLosing(state) {
-        return (state[OneDie.kRoundIndex] == this.roundCount &&
-            state[OneDie.kTotalScore] < this.winningScore);
+        // If we are winning, we are not losing.
+        if (this.isWinningAtOffset(state, 0)) {
+            return false;
+        }
+        // If someone else has won, we have lost.
+        for (let i = 1; i < this.numberOfPlayers; ++i) {
+            if (this.isWinningAtOffset(state, i * OneDie.kStatePerPlayer)) {
+                return true;
+            }
+        }
+        // Otherwise, we can lose if all rounds are used.
+        return (state[OneDie.kRoundIndex] == this.roundCount);
     }
 }
 exports.OneDie = OneDie;
@@ -182,6 +226,7 @@ OneDie.kEndIndex = 1;
 OneDie.kScoreIndex = 0;
 OneDie.kRoundIndex = 1;
 OneDie.kTotalScore = 2;
+OneDie.kStatePerPlayer = 3;
 //# sourceMappingURL=oneDie.js.map
 
 /***/ }),
@@ -219,12 +264,25 @@ exports.RunGame = void 0;
 class RunGame {
     constructor() {
     }
+    oneHotMove(move) {
+        let maxValue = -1000;
+        let maxIndex = 0;
+        for (let i = 0; i < move.length; ++i) {
+            if (move[i] > maxValue) {
+                maxValue = move[i];
+                maxIndex = i;
+            }
+        }
+        const result = new Float32Array(move.length);
+        result[maxIndex] = 1.0;
+        return result;
+    }
     run(game, strategy, states, moves) {
         let state = game.getInitialState();
         while (!game.isWinning(state) && !game.isLosing(state)) {
             const move = strategy.getMove(state);
             states.push(state);
-            moves.push(move);
+            moves.push(this.oneHotMove(move));
             state = game.applyMove(state, move);
         }
         return game.isWinning(state);
