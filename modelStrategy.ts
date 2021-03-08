@@ -23,7 +23,7 @@ export class ModelStrategy implements Strategy {
       const l2 = tf.layers.dense({ units: 2 }).apply(l1);
       const o = tf.layers.dense({
         units: game.getMoveSize(),
-        activation: 'softmax'
+        activation: 'hardSigmoid',
       }).apply(l2) as tf.SymbolicTensor;
 
       this.model = tf.model({ inputs: input, outputs: o });
