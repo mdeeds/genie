@@ -1,4 +1,3 @@
-import { Stats } from "fs";
 import { Game } from "./game";
 import { Strategy } from "./strategy";
 
@@ -34,8 +33,9 @@ export class RunGame {
 
   collectWinData(game: Game, strategy: Strategy,
     winningStates: Float32Array[], winningMoves: Float32Array[]) {
+    const startTime = window.performance.now();
     let winCount = 0;
-    const gameCount = 200;
+    const gameCount = 1000;
     for (let i = 0; i < gameCount; ++i) {
       const states: Float32Array[] = [];
       const moves: Float32Array[] = [];
@@ -46,7 +46,8 @@ export class RunGame {
         ++winCount;
       }
     }
-    console.log(`Win rate: ${(winCount / gameCount).toFixed(3)}`);
+    const elapsedSeconds = (window.performance.now() - startTime) / 1000;
+    console.log(`Running time: ${elapsedSeconds}`)
     return winCount / gameCount;
   }
 }

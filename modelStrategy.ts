@@ -48,6 +48,6 @@ export class ModelStrategy implements Strategy {
   train(states: Float32Array[], moves: Float32Array[]): Promise<tf.History> {
     const x = tf.tensor(states, [states.length, this.stateSize]);
     const y = tf.tensor(moves, [moves.length, this.moveSize]);
-    return this.model.fit(x, y, { epochs: 50 });
+    return this.model.fit(x, y, { epochs: 10 });
   }
 }

@@ -74,11 +74,16 @@ function loop(iterations: number) {
     return;
   }
 
+  const trainStart = window.performance.now();
   m.train(trainingStates, trainingMoves).then((history) => {
+    const elapsedSeconds = (window.performance.now() - trainStart) / 1000;
+    console.log(`Training time: ${elapsedSeconds}`);
     makeCanvasSet(m);
     const losses = history.history['loss'] as number[];
     console.log(`First loss: ${losses[0]}`);
     console.log(`Last loss: ${losses[losses.length - 1]}`);
+
+    // Keep the most recent 400 training examples.
     while (trainingStates.length > 400) {
       trainingStates.shift();
       trainingMoves.shift();
@@ -86,6 +91,10 @@ function loop(iterations: number) {
     const winRate = runner.collectWinData(g, m, trainingStates, trainingMoves);
     ++trainingSession;
     addRow(trainingSession, winRate);
+    if (trainingStates.length <= 400) {
+      // If we didn't collect any new data, add some more random strategy data.
+      runner.collectWinData(g, s, trainingStates, trainingMoves);
+    }
 
     setTimeout(() => { loop(iterations - 1); });
   });
