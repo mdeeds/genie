@@ -8,14 +8,15 @@ export class RunGame {
   private oneHotMove(move: Float32Array) {
     let maxValue = -1000;
     let maxIndex = 0;
+    const result = new Float32Array(move.length);
     for (let i = 0; i < move.length; ++i) {
+      result[i] = 0.1;
       if (move[i] > maxValue) {
         maxValue = move[i];
         maxIndex = i;
       }
     }
-    const result = new Float32Array(move.length);
-    result[maxIndex] = 1.0;
+    result[maxIndex] = 0.9;
     return result;
   }
 
