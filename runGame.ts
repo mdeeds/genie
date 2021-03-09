@@ -23,7 +23,15 @@ export class RunGame {
   // Runs the game, returns the player number who won or -1 if there is
   // no winner.
   private run(game: Game, strategies: Strategy[],
-    states: Float32Array[][], moves: Float32Array[][]): number {
+    outStates: Float32Array[], outMoves: Float32Array[]): number {
+
+    const states: Float32Array[][] = [];
+    const moves: Float32Array[][] = [];
+    while (states.length < game.getPlayerCount()) {
+      states.push([]);
+      moves.push([]);
+    }
+
     console.assert(game.getPlayerCount() === strategies.length);
     let state = game.getInitialState();
     let currentPlayer = 0;
@@ -35,6 +43,14 @@ export class RunGame {
       currentPlayer = (currentPlayer + 1) % game.getPlayerCount();
     }
     const winner = game.getWinner(state);
+    if (winner >= 0) {
+      for (const s of states[winner]) {
+        outStates.push(s);
+      }
+      for (const m of moves[winner]) {
+        outMoves.push(m);
+      }
+    }
     return winner;
   }
 
@@ -44,16 +60,8 @@ export class RunGame {
     let winCount = 0;
     const gameCount = 1000;
     for (let i = 0; i < gameCount; ++i) {
-      const states: Float32Array[][] = [];
-      const moves: Float32Array[][] = [];
-      while (states.length < game.getPlayerCount()) {
-        states.push([]);
-        moves.push([]);
-      }
-      const winner = this.run(game, strategies, states, moves);
+      const winner = this.run(game, strategies, winningStates, winningMoves);
       if (winner >= 0) {
-        winningStates.push(...states[winner]);
-        winningMoves.push(...moves[winner]);
         ++winCount;
       }
     }
