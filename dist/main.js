@@ -85,15 +85,15 @@ function loop(iterations) {
             console.log(JSON.stringify(history.history));
         }
         // Keep the most recent 400 training examples.
-        while (trainingStates.length > 400) {
+        while (trainingStates.length > 5000) {
             trainingStates.shift();
             trainingMoves.shift();
         }
         const winRate = runner.collectWinData(g, [m, m], trainingStates, trainingMoves);
         ++trainingSession;
         addRow(trainingSession, winRate);
-        if (trainingStates.length <= 400) {
-            // If we didn't collect any new data, add some more random strategy data.
+        if (trainingStates.length <= 10000) {
+            // If we didn't collect much new data, add some more random strategy data.
             runner.collectWinData(g, [s, s], trainingStates, trainingMoves);
         }
         setTimeout(() => { loop(iterations - 1); });
