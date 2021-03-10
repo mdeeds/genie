@@ -1,32 +1,34 @@
 import { Game } from "./game";
+import { Move } from "./move";
+import { State } from "./state";
 import { Strategy } from "./strategy";
 
 export class RunGame {
   constructor() {
   }
 
-  private oneHotMove(move: Float32Array) {
+  private oneHotMove(move: Move) {
     let maxValue = -1000;
     let maxIndex = 0;
-    const result = new Float32Array(move.length);
-    for (let i = 0; i < move.length; ++i) {
-      result[i] = 0.1;
-      if (move[i] > maxValue) {
-        maxValue = move[i];
+    const result = new Move(move.data.length);
+    for (let i = 0; i < move.data.length; ++i) {
+      result[i] = (0.1 / (move.data.length - 1));
+      if (move.data[i] > maxValue) {
+        maxValue = move.data[i];
         maxIndex = i;
       }
     }
-    result[maxIndex] = 0.9;
+    result.data[maxIndex] = 0.9;
     return result;
   }
 
   // Runs the game, returns the player number who won or -1 if there is
   // no winner.
   private run(game: Game, strategies: Strategy[],
-    outStates: Float32Array[], outMoves: Float32Array[]): number {
+    outStates: State[], outMoves: Move[]): number {
 
-    const states: Float32Array[][] = [];
-    const moves: Float32Array[][] = [];
+    const states: State[][] = [];
+    const moves: Move[][] = [];
     while (states.length < game.getPlayerCount()) {
       states.push([]);
       moves.push([]);
@@ -55,7 +57,7 @@ export class RunGame {
   }
 
   collectWinData(game: Game, strategies: Strategy[],
-    winningStates: Float32Array[], winningMoves: Float32Array[]) {
+    winningStates: State[], winningMoves: Move[]) {
     const startTime = window.performance.now();
     let winCount = 0;
     const gameCount = 1000;

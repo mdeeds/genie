@@ -1,4 +1,6 @@
 import { Game } from "./game";
+import { Move } from "./move";
+import { State } from "./state";
 
 export class OneDie implements Game {
   static kGoIndex = 0;
@@ -19,13 +21,13 @@ export class OneDie implements Game {
     this.winningScore = winningScore;
   }
 
-  // [ current player state..., next player state...., , player number]
+  // [ current player state..., next player state...., ,]
   getStateSize() {
-    return OneDie.kStatePerPlayer * this.numberOfPlayers + 1;
+    return OneDie.kStatePerPlayer * this.numberOfPlayers;
   }
 
   getInitialState() {
-    return new Float32Array(this.getStateSize());
+    return new State(this.getStateSize(), 0);
   }
 
   getPlayerCount() {
@@ -41,11 +43,11 @@ export class OneDie implements Game {
     return 1 + Math.trunc(Math.random() * 6);
   }
 
-  applyMove(state: Float32Array, move: Float32Array): Float32Array {
-    const newState: Float32Array = state.slice(0, OneDie.kStatePerPlayer);
+  applyMove(state: State, move: Move): State {
+    const newState: Float32Array = state.data.slice(0, OneDie.kStatePerPlayer);
     // Moves only happen if rounds are remaining.
-    if (state[OneDie.kRoundIndex] < this.roundCount) {
-      if (move[OneDie.kGoIndex] > move[OneDie.kEndIndex]) {
+    if (state.data[OneDie.kRoundIndex] < this.roundCount) {
+      if (move.data[OneDie.kGoIndex] > move.data[OneDie.kEndIndex]) {
         // "GO" move
         const newRoll = this.getDieRoll();
         if (newRoll === 1) {
@@ -65,29 +67,26 @@ export class OneDie implements Game {
     // Result state is shifted by one player to the left.  The next active
     // player is placed at the front, and the current player is placed at the
     // end.
-    const resultState = new Float32Array(this.getStateSize());
+    const currentPlayer = state.playerIndex;
+    const nextPlayer = (currentPlayer + 1) % this.numberOfPlayers;
+    const resultState = new State(this.getStateSize(), nextPlayer);
     const otherPlayerStateSize =
       (this.numberOfPlayers - 1) * OneDie.kStatePerPlayer;
     for (let i = 0; i < otherPlayerStateSize; ++i) {
-      resultState[i] = state[i + OneDie.kStatePerPlayer];
+      resultState.data[i] = state.data[i + OneDie.kStatePerPlayer];
     }
     for (let i = 0; i < OneDie.kStatePerPlayer; ++i) {
-      resultState[i + otherPlayerStateSize] = newState[i];
+      resultState.data[i + otherPlayerStateSize] = newState[i];
     }
-
-    const currentPlayer = state[state.length - 1];
-    const nextPlayer = (currentPlayer + 1) % this.numberOfPlayers;
-    state[state.length - 1] = nextPlayer;
-
     return resultState;
   }
 
-  private isWinningAtOffset(state: Float32Array, offset: number) {
-    return (state[OneDie.kRoundIndex + offset] == this.roundCount &&
-      state[OneDie.kTotalScore + offset] >= this.winningScore);
+  private isWinningAtOffset(state: State, offset: number) {
+    return (state.data[OneDie.kRoundIndex + offset] == this.roundCount &&
+      state.data[OneDie.kTotalScore + offset] >= this.winningScore);
   }
 
-  getWinner(state: Float32Array) {
+  getWinner(state: State) {
     for (let i = 0; i < this.numberOfPlayers; ++i) {
       if (this.isWinningAtOffset(state, i * OneDie.kStatePerPlayer)) {
         return i;
@@ -95,10 +94,10 @@ export class OneDie implements Game {
     }
     return -1;
   }
-  isEnded(state: Float32Array) {
+  isEnded(state: State) {
     let ended = true;
     for (let i = 0; i < this.numberOfPlayers; ++i) {
-      if (state[OneDie.kRoundIndex + i * OneDie.kStatePerPlayer]
+      if (state.data[OneDie.kRoundIndex + i * OneDie.kStatePerPlayer]
         < this.roundCount) {
         ended = false;
       }
