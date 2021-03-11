@@ -6,29 +6,31 @@ from runGame import RunGame
 
 def main():
     g = OneDie()
-    s = GoodStrategy()
+    s = GoodStrategy(g)
 
     print("Starting.")
 
     runner = RunGame()
     trainingStates = []
     trainingMoves = []
-    runner.collectWinData(g, s, trainingStates, trainingMoves)
 
+    bestModel = None
+    bestModelRate = 0
+    runner.kMinWins = 1E5
+    runner.kMinGames = 1E7
+    runner.collectWinData(g, [s], trainingStates, trainingMoves)
     print("Collected " + str(len(trainingMoves)) + " moves.")
 
-    m = ModelStrategy(g)
+    for count in range(24):
+        m = ModelStrategy(g)
+        m.train(trainingStates, trainingMoves)
+        runner.kMinWins = 1E4
+        runner.kMinGames = 1E6
+        mrate = runner.collectWinData(g, [m], trainingStates, trainingMoves)
 
-    runner.collectWinData(g, s, trainingStates, trainingMoves)
-    for _ in range(10):
-        history = m.train(trainingStates, trainingMoves)
-        trainingStates = []
-        trainingMoves = []
-        # add some training states from the model.
-        runner.collectWinData(g, m, trainingStates, trainingMoves)
-        # add some training states from the strategy.
-        runner.collectWinData(g, s, trainingStates, trainingMoves)
-    SaveDecisionMatrix(g, m)
+        if mrate > bestModelRate:
+            bestModel = m
+    SaveDecisionMatrix(g, bestModel)
 
 
 def SaveDecisionMatrix(g, m):
@@ -36,7 +38,7 @@ def SaveDecisionMatrix(g, m):
         f = open("moves"+str(round)+".csv", "w")
         for currentScore in range(45):
             for totalScore in range(45):
-                move = m.getMove([currentScore, round, totalScore])
+                move = m.getMove([currentScore, round, totalScore, 0])
                 if move[g.kGoIndex] > move[g.kEndIndex]:
                     f.write("1,")
                 else:
