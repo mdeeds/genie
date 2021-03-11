@@ -1,4 +1,6 @@
 import { Game } from "./game";
+import { Move } from "./move";
+import { State } from "./state";
 import { Strategy } from "./strategy";
 
 export class RandomStrategy implements Strategy {
@@ -7,10 +9,10 @@ export class RandomStrategy implements Strategy {
     this.moveSize = g.getMoveSize();
   }
 
-  getMove(state: Float32Array): Float32Array {
-    const move = new Float32Array(this.moveSize);
+  getMove(state: State): Move {
+    const move = new Move(this.moveSize);
     const moveNumber = Math.trunc(Math.random() * this.moveSize);
-    move[moveNumber] = 1.0;
+    move.data[moveNumber] = 1.0;
     return move;
   }
 }

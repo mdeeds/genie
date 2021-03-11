@@ -1,5 +1,7 @@
 import * as tf from '@tensorflow/tfjs';
 import { Game } from './game';
+import { Move } from './move';
+import { State } from './state';
 import { Strategy } from './strategy';
 // require('@tensorflow/tfjs-backend-wasm');
 
@@ -32,22 +34,25 @@ export class ModelStrategy implements Strategy {
     })
   }
 
-  getMove(state: Float32Array): Float32Array {
-    const inputTensor = tf.tensor(state, [1, this.stateSize]);
+  getMove(state: State): Move {
+    const inputTensor = tf.tensor(state.data, [1, this.stateSize]);
     const moveTensor = this.model.predict(inputTensor) as tf.Tensor;
 
-    const move = new Float32Array(moveTensor.dataSync());
-    for (let i = 0; i < move.length; ++i) {
-      move[i] += (Math.random() - 0.5) * this.moveNoise;
+    const move = new Move(this.moveSize);
+    const moveData: tf.TypedArray = moveTensor.dataSync();
+    for (let i = 0; i < moveData.length; ++i) {
+      move.data[i] = moveData[i] + (Math.random() - 0.5) * this.moveNoise;
     }
     inputTensor.dispose();
     moveTensor.dispose();
     return move;
   }
 
-  train(states: Float32Array[], moves: Float32Array[]): Promise<tf.History> {
-    const x = tf.tensor(states, [states.length, this.stateSize]);
-    const y = tf.tensor(moves, [moves.length, this.moveSize]);
+  train(states: State[], moves: Move[]): Promise<tf.History> {
+    const x = tf.tensor(State.toDataArray(states),
+      [states.length, this.stateSize]);
+    const y = tf.tensor(Move.toDataArray(moves),
+      [moves.length, this.moveSize]);
     return this.model.fit(x, y, { epochs: 10 });
   }
 }

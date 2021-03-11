@@ -1,5 +1,8 @@
+import { Move } from "./move";
+import { State } from "./state";
+
 export interface Game {
-  getInitialState(): Float32Array;
+  getInitialState(): State;
 
   // Returns the number of players in this game
   getPlayerCount(): number;
@@ -10,11 +13,11 @@ export interface Game {
   getMoveSize(): number;
 
   // Applies the move to the state and returns the new state.
-  applyMove(state: Float32Array, move: Float32Array): Float32Array;
+  applyMove(state: State, move: Move): State;
 
   // Returns number of player who won or -1 if no winner.
-  getWinner(state: Float32Array);
+  getWinner(state: State);
 
   // Returns true if the game is over.  A game can end with no winner.
-  isEnded(State: Float32Array);
+  isEnded(state: State);
 }

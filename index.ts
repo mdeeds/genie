@@ -1,3 +1,5 @@
+"use strict";
+
 import { ModelStrategy } from "./modelStrategy";
 import { Game } from "./game";
 import { OneDie } from "./oneDie";
@@ -5,6 +7,8 @@ import { RandomStrategy } from "./randomStrategy";
 import { RunGame } from "./runGame";
 import { GoodStrategy } from "./goodStrategy";
 import { Strategy } from "./strategy";
+import { State } from "./state";
+import { Move } from "./move";
 
 const g: Game = new OneDie(2);
 const s = new RandomStrategy(g);
@@ -12,8 +16,8 @@ const s = new RandomStrategy(g);
 console.log("Starting.");
 
 const runner = new RunGame();
-const trainingStates: Float32Array[] = [];
-const trainingMoves: Float32Array[] = [];
+const trainingStates: State[] = [];
+const trainingMoves: Move[] = [];
 runner.collectWinData(g, [s, s], trainingStates, trainingMoves);
 
 console.log(`Collected ${trainingMoves.length} moves.`);
@@ -34,15 +38,15 @@ function makeCanvas(strategy: Strategy, round: number, game: Game) {
   const pixelData = new Uint8ClampedArray(30 * 30 * 4);
   for (let x = 0; x < 30; ++x) {
     for (let y = 0; y < 30; ++y) {
-      const state = new Float32Array(game.getStateSize())
-      state[0] = x;
-      state[1] = round;
-      state[2] = y;
+      const state = new State(game.getStateSize(), 0)
+      state.data[0] = x;
+      state.data[1] = round;
+      state.data[2] = y;
       const move = strategy.getMove(state);
       const i = x * 4 + y * 4 * 30;
-      pixelData[i + 0] = 255 * move[0];
-      pixelData[i + 1] = (move[0] > move[1]) ? 255 : 0;
-      pixelData[i + 2] = 255 * move[1];
+      pixelData[i + 0] = 255 * move.data[0];
+      pixelData[i + 1] = (move.data[0] > move.data[1]) ? 255 : 0;
+      pixelData[i + 2] = 255 * move.data[1];
       pixelData[i + 3] = 255;
     }
   }
