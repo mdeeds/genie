@@ -10,9 +10,17 @@ export class State {
   }
 
   data: Float32Array;
+  // Negative number indicates the game is not over.
+  // Positive number indicates the winner's player index.
+  winner: number;
   readonly playerIndex: number;
-  constructor(dataSize: number, playerIndex: number) {
+  constructor(dataSize: number, playerIndex: number, winner: number = -1) {
     this.playerIndex = playerIndex;
     this.data = new Float32Array(dataSize);
+    this.winner = winner;
+  }
+
+  isEnded() {
+    return this.winner >= 0;
   }
 }

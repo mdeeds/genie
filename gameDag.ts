@@ -17,6 +17,9 @@ export class StateNode {
   private children: MoveNode[] = [];
   private parents: StateNode[] = [];
 
+  private readonly kBaseWinRate = 0.5;
+  private readonly kAlpha = 6.0;
+
   constructor(state: State) {
     this.state = state;
   }
@@ -26,23 +29,16 @@ export class StateNode {
     nextState.parents.push(this);
   }
 
-  // Marks a win on this node and all parents of this node with the
-  // same player index.
-  markWin(playerIndex = -1) {
-    const pi = playerIndex < 0 ? this.state.playerIndex : playerIndex;
-    if (pi === this.state.playerIndex) {
+  addVisit(leadsToWin: boolean) {
+    this.visits++;
+    if (leadsToWin) {
       this.wins++;
     }
-    for (const p of this.parents) {
-      p.markWin(pi);
-    }
-  }
-  addVisit() {
-    this.visits++;
   }
 
   getWinRate() {
-    return this.wins / this.visits;
+    return (this.wins + this.kAlpha * this.kBaseWinRate) /
+      (this.visits + this.kAlpha);
   }
 }
 
@@ -63,7 +59,7 @@ export class GameDag {
 
   // Adds state to this DAG.  If state already exists in DAG,
   // this increments the visit count.
-  addState(state: State): StateNode {
+  addState(state: State, leadsToWin: boolean): StateNode {
     const key = this.getKey(state);
     let stateNode: StateNode = null;
     if (this.knownStates.has(key)) {
@@ -72,7 +68,15 @@ export class GameDag {
       stateNode = new StateNode(state);
       this.knownStates.set(key, stateNode);
     }
-    stateNode.addVisit();
+    stateNode.addVisit(leadsToWin);
     return stateNode;
+  }
+
+  // Produces a state-move pair for every known state.
+  // The values in the move are not indicators (i.e. 1 or 0) they are 
+  // the calculated probability of winning from the state we get to
+  // when applying the move.
+  getMoveVectors(outStates: State[], outMoves: Move[]) {
+
   }
 }
