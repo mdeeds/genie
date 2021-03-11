@@ -1,31 +1,51 @@
+import numpy as np
+
+
 class RunGame:
     # game play stops if either of these are achived.
-    kMinWins = 200
-    kMinGames = 1000
+    kMinWins = 100
+    kMinGames = 2000
 
-    def run(self, game, strategy, states, moves):
+    def oneHotMove(self, move):
+        maxValue = -1000
+        maxIndex = 0
+        result = np.zeros(len(move))
+        for i in range(len(move)):
+            result[i] = 0.1
+            if (move[i] > maxValue):
+                maxValue = move[i]
+                maxIndex = i
+        result[maxIndex] = 0.9
+        return result
+
+    def run(self, game, strategies, states, moves):
         state = game.getInitialState()
-        while not game.isWinning(state) and not game.isLosing(state):
-            move = strategy.getMove(state)
-            states.append(state)
-            moves.append(move)
+        currentPlayer = 0
+        while not game.isEnded(state):
+            move = strategies[currentPlayer].getMove(state)
+            states[currentPlayer].append(state)
+            moves[currentPlayer].append(self.oneHotMove(move))
             state = game.applyMove(state, move)
-        return game.isWinning(state)
+            currentPlayer = (currentPlayer + 1) % game.getPlayerCount()
+        winner = game.getWinner(state)
+        return winner
 
-    def collectWinData(self, game, strategy, winningStates, winningMoves):
+    def collectWinData(self, game, strategies, winningStates, winningMoves):
         winCount = 0
         gameCount = 0
         # for _ in range(gameCount):
         while (winCount < self.kMinWins and gameCount < self.kMinGames):
             states = []
             moves = []
-            isWin = self.run(game, strategy, states, moves)
-            if (isWin):
-                for item in states:
+            while len(states) < game.getPlayerCount():
+                states.append([])
+                moves.append([])
+            winner = self.run(game, strategies, states, moves)
+            if (winner >= 0):
+                for item in states[winner]:
                     winningStates.append(item)
-                for item in moves:
-                    newItem = item.astype(int)
-                    winningMoves.append(newItem)
+                for item in moves[winner]:
+                    winningMoves.append(item)
                 winCount += 1
             gameCount += 1
         winRate = winCount / gameCount
