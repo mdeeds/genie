@@ -1,0 +1,14 @@
+
+
+.state {
+  font-family: 'Courier New', Courier, monospace;
+  border-radius: 3px;
+  box-shadow: 3px 3px 6px #00000044;
+  margin: 9px;
+  padding: 3px;
+  border-radius: 4px;
+}
+
+.cell {
+  font-size: 22px;
+}

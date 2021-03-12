@@ -65,8 +65,8 @@ export class TicTacToe implements Game {
   applyMove(state: State, move: Move): State {
     const offset = 9 * state.playerIndex;
     const i = this.getLargestIndex(move);
-    const nextPlayer = state.playerIndex ^ 0x1;
-    if (state[i] > 0.5 || state[i + 9] > 0.5) {
+    const nextPlayer = 1 - state.playerIndex;
+    if (state.data[i] > 0.5 || state.data[i + 9] > 0.5) {
       // It is illegal to play on a square that already has an X or O.
       // This results in an immediate game over.
       const nextState = new State(this.getStateSize(), nextPlayer, nextPlayer);

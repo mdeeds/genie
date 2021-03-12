@@ -54,7 +54,7 @@ export class RunOneDie {
     const runner = new RunGame();
     // const trainingStates: State[] = [];
     // const trainingMoves: Move[] = [];
-    runner.collectWinData(g, [s, s]);
+    runner.collectWinData(g, [s, s], [], [], 1000);
 
     const m: ModelStrategy = new ModelStrategy(g);
 
@@ -101,12 +101,13 @@ export class RunOneDie {
           trainingStates.shift();
           trainingMoves.shift();
         }
-        const winRate = runner.collectWinData(g, [m, m]);
+        // TODO: Do something with the output data.
+        const winRate = runner.collectWinData(g, [m, m], [], [], 1000);
         ++trainingSession;
         addRow(trainingSession, winRate);
         if (trainingStates.length <= 10000) {
           // If we didn't collect much new data, add some more random strategy data.
-          runner.collectWinData(g, [s, s]);
+          runner.collectWinData(g, [s, s], [], [], 1000);
         }
         setTimeout(() => { loop(iterations - 1); });
       });

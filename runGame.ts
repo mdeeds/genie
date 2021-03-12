@@ -27,40 +27,41 @@ export class RunGame {
 
   // Runs the game, returns the player number who won or -1 if there is
   // no winner.
-  private run(game: Game, strategies: Strategy[]): number {
-    const states: State[][] = [];
-    const moves: Move[][] = [];
-    while (states.length < game.getPlayerCount()) {
-      states.push([]);
-      moves.push([]);
-    }
+  private run(game: Game, strategies: Strategy[],
+    outStates: State[], outWinProb: number[]): number {
+    const states: State[] = [];
 
     console.assert(game.getPlayerCount() === strategies.length);
     let state = game.getInitialState();
-    let currentPlayer = 0;
     while (!state.isEnded()) {
+      const currentPlayer = state.playerIndex;
       const move = strategies[currentPlayer].getMove(state);
-      states[currentPlayer].push(state);
-      moves[currentPlayer].push(this.oneHotMove(move));
+      states.push(state);
       state = game.applyMove(state, move);
-      currentPlayer = (currentPlayer + 1) % game.getPlayerCount();
     }
+    states.push(state);
     const winner = state.winner;
+    for (const s of states) {
+      outStates.push(s);
+      if (s.playerIndex === winner) {
+        outWinProb.push(1.0);
+      } else {
+        outWinProb.push(0.0);
+      }
+    }
+
     return winner;
   }
 
-  collectWinData(game: Game, strategies: Strategy[]) {
-    const startTime = window.performance.now();
+  collectWinData(game: Game, strategies: Strategy[],
+    outStates: State[], outWinProb: number[], gameCount: number) {
     let winCount = 0;
-    const gameCount = 1000;
     for (let i = 0; i < gameCount; ++i) {
-      const winner = this.run(game, strategies);
+      const winner = this.run(game, strategies, outStates, outWinProb);
       if (winner >= 0) {
         ++winCount;
       }
     }
-    const elapsedSeconds = (window.performance.now() - startTime) / 1000;
-    console.log(`Running time: ${elapsedSeconds}`)
     return winCount / gameCount;
   }
 
