@@ -53,10 +53,11 @@ export class RunGame {
         }
       }
     }
-
     return winner;
   }
 
+  // outWinProb will be populated with indicators (0 for loss, 1 for win)
+  // for the players in the game.
   collectWinData(game: Game, strategies: Strategy[],
     outStates: State[], outWinProb: number[][], gameCount: number) {
     let winCount = 0;
