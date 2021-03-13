@@ -66,29 +66,27 @@ export class RunTicTacToe {
     }
 
     const e1 = await ModelEstimator.make(g);
-    const e2 = await ModelEstimator.make(g);
     const p1 = new WinEstimatorStrategy(g, e1);
-    const p2 = new WinEstimatorStrategy(g, e2);
 
-    console.log("Training P1");
-    await e1.train(exampleStates, exampleWinProbs);
-    console.log("Training P2");
-    await e2.train(exampleStates, exampleWinProbs);
-    console.log("Done training.");
+    for (let loop = 0; loop < 10; ++loop) {
+      console.log("Training P1");
+      await e1.train(exampleStates, exampleWinProbs);
+      console.log("Done training.");
 
-    exampleWinProbs.splice(0, exampleWinProbs.length);
-    exampleStates.splice(0, exampleStates.length);
-    runner.collectWinData(g, [p1, p2], exampleStates, exampleWinProbs, 20);
+      exampleWinProbs.splice(0, exampleWinProbs.length);
+      exampleStates.splice(0, exampleStates.length);
+      runner.collectWinData(g, [p1, p1], exampleStates, exampleWinProbs, 100);
 
-    RunTicTacToe.bigMessage("Game Results");
-    for (let i = 0; i < 20; ++i) {
-      const state = exampleStates[i];
-      const prob: number[][] = e1.probabilityOfWin([state]);
-      RunTicTacToe.visualizeState(
-        state, `Win: ${exampleWinProbs[i]}; ` +
-        `to play: ${state.playerIndex}; ` +
-        `X win: ${prob[0][0].toFixed(3)}; ` +
-      `O win: ${prob[0][1].toFixed(3)}; `);
+      RunTicTacToe.bigMessage(`Game Results ${loop + 1}`);
+      for (let i = 0; i < 20; ++i) {
+        const state = exampleStates[i];
+        const prob: number[][] = e1.probabilityOfWin([state]);
+        RunTicTacToe.visualizeState(
+          state, `Win: ${exampleWinProbs[i]}; ` +
+          `to play: ${state.playerIndex}; ` +
+          `X win: ${prob[0][0].toFixed(3)}; ` +
+        `O win: ${prob[0][1].toFixed(3)}; `);
+      }
     }
   }
 }

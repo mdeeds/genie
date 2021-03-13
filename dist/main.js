@@ -280,25 +280,23 @@ class RunTicTacToe {
                     `O win: ${prob[1].toFixed(3)}; `);
             }
             const e1 = yield modelEstimator_1.ModelEstimator.make(g);
-            const e2 = yield modelEstimator_1.ModelEstimator.make(g);
             const p1 = new winEstimatorStrategy_1.WinEstimatorStrategy(g, e1);
-            const p2 = new winEstimatorStrategy_1.WinEstimatorStrategy(g, e2);
-            console.log("Training P1");
-            yield e1.train(exampleStates, exampleWinProbs);
-            console.log("Training P2");
-            yield e2.train(exampleStates, exampleWinProbs);
-            console.log("Done training.");
-            exampleWinProbs.splice(0, exampleWinProbs.length);
-            exampleStates.splice(0, exampleStates.length);
-            runner.collectWinData(g, [p1, p2], exampleStates, exampleWinProbs, 20);
-            RunTicTacToe.bigMessage("Game Results");
-            for (let i = 0; i < 20; ++i) {
-                const state = exampleStates[i];
-                const prob = e1.probabilityOfWin([state]);
-                RunTicTacToe.visualizeState(state, `Win: ${exampleWinProbs[i]}; ` +
-                    `to play: ${state.playerIndex}; ` +
-                    `X win: ${prob[0][0].toFixed(3)}; ` +
-                    `O win: ${prob[0][1].toFixed(3)}; `);
+            for (let loop = 0; loop < 10; ++loop) {
+                console.log("Training P1");
+                yield e1.train(exampleStates, exampleWinProbs);
+                console.log("Done training.");
+                exampleWinProbs.splice(0, exampleWinProbs.length);
+                exampleStates.splice(0, exampleStates.length);
+                runner.collectWinData(g, [p1, p1], exampleStates, exampleWinProbs, 100);
+                RunTicTacToe.bigMessage(`Game Results ${loop + 1}`);
+                for (let i = 0; i < 20; ++i) {
+                    const state = exampleStates[i];
+                    const prob = e1.probabilityOfWin([state]);
+                    RunTicTacToe.visualizeState(state, `Win: ${exampleWinProbs[i]}; ` +
+                        `to play: ${state.playerIndex}; ` +
+                        `X win: ${prob[0][0].toFixed(3)}; ` +
+                        `O win: ${prob[0][1].toFixed(3)}; `);
+                }
             }
         });
     }
@@ -538,10 +536,11 @@ class WinEstimatorStrategy {
     // Adding noise to the moves results in non-deterministic plays
     // when the underlying model is unsure.  This allows us to produce
     // training data for multiple options when unsure.
-    constructor(game, estimator) {
+    constructor(game, estimator, moveNoise = 0.2) {
         this.moveSize = game.getMoveSize();
         this.game = game;
         this.estimator = estimator;
+        this.moveNoise = moveNoise;
     }
     getMove(state) {
         const stateData = [];
@@ -566,7 +565,8 @@ class WinEstimatorStrategy {
         const moveData = this.estimator.probabilityOfWin(stateData);
         for (let i = 0; i < this.moveSize; ++i) {
             // Choose the move that gives us the highest chance of winning
-            move.data[i] = moveData[i][state.playerIndex];
+            const noise = (Math.random() - 0.5) * this.moveNoise * 2;
+            move.data[i] = moveData[i][state.playerIndex] + noise;
         }
         for (const f of fatalMoves) {
             move.data[f] = 0.0;

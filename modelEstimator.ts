@@ -7,7 +7,6 @@ export class ModelEstimator implements Estimator {
   private stateSize: number;
   private moveSize: number;
   private model: tf.LayersModel;
-  private moveNoise: number;
   private game: Game;
 
   // Adding noise to the moves results in non-deterministic plays

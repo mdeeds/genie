@@ -9,14 +9,16 @@ export class WinEstimatorStrategy implements Strategy {
   private moveSize: number;
   private game: Game;
   private estimator: Estimator;
+  private moveNoise: number;
 
   // Adding noise to the moves results in non-deterministic plays
   // when the underlying model is unsure.  This allows us to produce
   // training data for multiple options when unsure.
-  constructor(game: Game, estimator: Estimator) {
+  constructor(game: Game, estimator: Estimator, moveNoise: number = 0.2) {
     this.moveSize = game.getMoveSize();
     this.game = game;
     this.estimator = estimator;
+    this.moveNoise = moveNoise;
   }
 
   getMove(state: State): Move {
@@ -42,7 +44,8 @@ export class WinEstimatorStrategy implements Strategy {
     const moveData: number[][] = this.estimator.probabilityOfWin(stateData);
     for (let i = 0; i < this.moveSize; ++i) {
       // Choose the move that gives us the highest chance of winning
-      move.data[i] = moveData[i][state.playerIndex];
+      const noise = (Math.random() - 0.5) * this.moveNoise * 2;
+      move.data[i] = moveData[i][state.playerIndex] + noise;
     }
     for (const f of fatalMoves) {
       move.data[f] = 0.0;
