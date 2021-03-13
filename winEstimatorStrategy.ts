@@ -39,10 +39,10 @@ export class WinEstimatorStrategy implements Strategy {
     }
 
     const move = new Move(this.moveSize);
-    const moveData: number[] = this.estimator.probabilityOfWin(stateData);
+    const moveData: number[][] = this.estimator.probabilityOfWin(stateData);
     for (let i = 0; i < this.moveSize; ++i) {
-      // Choose the move that gives our opponent the lowest chance of winning.
-      move.data[i] = 1.0 - moveData[i];
+      // Choose the move that gives us the highest chance of winning
+      move.data[i] = moveData[i][state.playerIndex];
     }
     for (const f of fatalMoves) {
       move.data[f] = 0.0;

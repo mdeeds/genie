@@ -27,7 +27,8 @@ export class ModelEstimator implements Estimator {
 
         const l1 = tf.layers.dense({ units: 18 }).apply(input);
         const l2 = tf.layers.dense({ units: 3 }).apply(l1);
-        const o = tf.layers.dense({ units: 1, activation: 'hardSigmoid' })
+        const o = tf.layers.dense(
+          { units: game.getPlayerCount(), activation: 'hardSigmoid' })
           .apply(l2) as tf.SymbolicTensor;
 
         result.model = tf.model({ inputs: input, outputs: o });
@@ -38,7 +39,7 @@ export class ModelEstimator implements Estimator {
     });
   }
 
-  probabilityOfWin(states: State[]): number[] {
+  probabilityOfWin(states: State[]): number[][] {
     const stateData: Float32Array[] = [];
     for (const s of states) {
       stateData.push(s.data);
@@ -50,20 +51,24 @@ export class ModelEstimator implements Estimator {
     const probTensor = this.model.predict(inputTensor) as tf.Tensor;
     const probData = probTensor.dataSync();
 
+    const result: number[][] = [];
+    for (let i = 0; i < states.length; ++i) {
+      result.push([]);
+      for (let j = 0; j < this.game.getPlayerCount(); ++j) {
+        result[i].push(probData[j + i * this.game.getPlayerCount()]);
+      }
+    }
+
     inputTensor.dispose();
     probTensor.dispose();
-
-    const result: number[] = [];
-    for (let i = 0; i < states.length; ++i) {
-      result.push(probData[i]);
-    }
     return result;
   }
 
-  train(states: State[], winProbabilities: number[]): Promise<tf.History> {
+  train(states: State[], winProbabilities: number[][]): Promise<tf.History> {
     const x = tf.tensor(State.toDataArray(states),
       [states.length, this.stateSize]);
-    const y = tf.tensor(winProbabilities, [winProbabilities.length, 1],
+    const y = tf.tensor(winProbabilities,
+      [winProbabilities.length, this.game.getPlayerCount()],
       'float32');
     return this.model.fit(x, y, { epochs: 100 });
   }

@@ -28,7 +28,7 @@ export class RunGame {
   // Runs the game, returns the player number who won or -1 if there is
   // no winner.
   private run(game: Game, strategies: Strategy[],
-    outStates: State[], outWinProb: number[]): number {
+    outStates: State[], outWinProb: number[][]): number {
     const states: State[] = [];
 
     console.assert(game.getPlayerCount() === strategies.length);
@@ -43,10 +43,14 @@ export class RunGame {
     const winner = state.winner;
     for (const s of states) {
       outStates.push(s);
-      if (s.playerIndex === winner) {
-        outWinProb.push(1.0);
-      } else {
-        outWinProb.push(0.0);
+      outWinProb.push([]);
+      const i = outWinProb.length - 1;
+      for (let j = 0; j < game.getPlayerCount(); ++j) {
+        if (j === winner) {
+          outWinProb[i].push(1.0);
+        } else {
+          outWinProb[i].push(0.0);
+        }
       }
     }
 
@@ -54,7 +58,7 @@ export class RunGame {
   }
 
   collectWinData(game: Game, strategies: Strategy[],
-    outStates: State[], outWinProb: number[], gameCount: number) {
+    outStates: State[], outWinProb: number[][], gameCount: number) {
     let winCount = 0;
     for (let i = 0; i < gameCount; ++i) {
       const winner = this.run(game, strategies, outStates, outWinProb);

@@ -7,7 +7,7 @@ import { DumbEstimator } from "./dumbEstimator";
 async function t1() {
   console.log("t1");
   const ttt = new TicTacToe();
-  const de = new DumbEstimator();
+  const de = new DumbEstimator(ttt);
   const wes = new WinEstimatorStrategy(ttt, de);
   const almostWinning = new State(ttt.getStateSize(), 0);
   almostWinning.data[0] = 1;
@@ -20,7 +20,7 @@ async function t1() {
 async function t2() {
   console.log("t2");
   const ttt = new TicTacToe();
-  const de = new DumbEstimator();
+  const de = new DumbEstimator(ttt);
   const wes = new WinEstimatorStrategy(ttt, de);
   const almostWinning = new State(ttt.getStateSize(), 1);
   almostWinning.data[9] = 1;
@@ -33,7 +33,7 @@ async function t2() {
 async function t3() {
   console.log("t3");
   const ttt = new TicTacToe();
-  const de = new DumbEstimator();
+  const de = new DumbEstimator(ttt);
   const wes = new WinEstimatorStrategy(ttt, de);
   const almostWinning = new State(ttt.getStateSize(), 0);
   almostWinning.data[3] = 1;

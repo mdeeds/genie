@@ -34,14 +34,36 @@ export class RunTicTacToe {
     body.appendChild(conatiner);
   }
 
+  private static bigMessage(message: string) {
+    const body = document.getElementsByTagName('body')[0];
+    const h = document.createElement('h1');
+    h.innerText = message;
+    body.appendChild(h);
+  }
+
   static async run() {
     const g = new TicTacToe();
     const s = new RandomStrategy(g);
     const runner = new RunGame();
     const exampleStates: State[] = [];
-    const exampleWinProbs: number[] = [];
-    runner.collectWinData(g, [s, s], exampleStates, exampleWinProbs, 1000);
+    const exampleWinProbs: number[][] = [];
+    const numGames = 1000;
+    runner.collectWinData(g, [s, s], exampleStates, exampleWinProbs, numGames);
     console.assert(exampleStates.length === exampleWinProbs.length);
+    console.assert(exampleWinProbs[0].length === g.getPlayerCount(),
+      `Prob count: ${exampleWinProbs[0].length}`);
+
+    RunTicTacToe.bigMessage("Training Data");
+    for (let i = 0; i < 10; ++i) {
+      const index = Math.trunc(Math.random() * exampleStates.length);
+      const state = exampleStates[index];
+      const prob = exampleWinProbs[index];
+      RunTicTacToe.visualizeState(
+        state, `${state.isEnded() ? "ended" : "-"}; ` +
+        `to play: ${state.playerIndex}; ` +
+        `X win: ${prob[0].toFixed(3)}; ` +
+      `O win: ${prob[1].toFixed(3)}; `);
+    }
 
     const e1 = await ModelEstimator.make(g);
     const e2 = await ModelEstimator.make(g);
@@ -58,13 +80,15 @@ export class RunTicTacToe {
     exampleStates.splice(0, exampleStates.length);
     runner.collectWinData(g, [p1, p2], exampleStates, exampleWinProbs, 20);
 
+    RunTicTacToe.bigMessage("Game Results");
     for (let i = 0; i < 20; ++i) {
       const state = exampleStates[i];
-      const prob: number[] = e1.probabilityOfWin([state]);
+      const prob: number[][] = e1.probabilityOfWin([state]);
       RunTicTacToe.visualizeState(
         state, `Win: ${exampleWinProbs[i]}; ` +
         `to play: ${state.playerIndex}; ` +
-      `prob: ${prob[0].toFixed(3)}`);
+        `X win: ${prob[0][0].toFixed(3)}; ` +
+      `O win: ${prob[0][1].toFixed(3)}; `);
     }
   }
 }

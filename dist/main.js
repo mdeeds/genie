@@ -39,7 +39,7 @@ class ModelEstimator {
                 const input = tf.input({ shape: [game.getStateSize()] });
                 const l1 = tf.layers.dense({ units: 18 }).apply(input);
                 const l2 = tf.layers.dense({ units: 3 }).apply(l1);
-                const o = tf.layers.dense({ units: 1, activation: 'hardSigmoid' })
+                const o = tf.layers.dense({ units: game.getPlayerCount(), activation: 'hardSigmoid' })
                     .apply(l2);
                 result.model = tf.model({ inputs: input, outputs: o });
                 result.model.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
@@ -56,17 +56,20 @@ class ModelEstimator {
         const inputTensor = tf.tensor(stateData, [states.length, this.stateSize]);
         const probTensor = this.model.predict(inputTensor);
         const probData = probTensor.dataSync();
-        inputTensor.dispose();
-        probTensor.dispose();
         const result = [];
         for (let i = 0; i < states.length; ++i) {
-            result.push(probData[i]);
+            result.push([]);
+            for (let j = 0; j < this.game.getPlayerCount(); ++j) {
+                result[i].push(probData[j + i * this.game.getPlayerCount()]);
+            }
         }
+        inputTensor.dispose();
+        probTensor.dispose();
         return result;
     }
     train(states, winProbabilities) {
         const x = tf.tensor(state_1.State.toDataArray(states), [states.length, this.stateSize]);
-        const y = tf.tensor(winProbabilities, [winProbabilities.length, 1], 'float32');
+        const y = tf.tensor(winProbabilities, [winProbabilities.length, this.game.getPlayerCount()], 'float32');
         return this.model.fit(x, y, { epochs: 100 });
     }
 }
@@ -168,11 +171,15 @@ class RunGame {
         const winner = state.winner;
         for (const s of states) {
             outStates.push(s);
-            if (s.playerIndex === winner) {
-                outWinProb.push(1.0);
-            }
-            else {
-                outWinProb.push(0.0);
+            outWinProb.push([]);
+            const i = outWinProb.length - 1;
+            for (let j = 0; j < game.getPlayerCount(); ++j) {
+                if (j === winner) {
+                    outWinProb[i].push(1.0);
+                }
+                else {
+                    outWinProb[i].push(0.0);
+                }
             }
         }
         return winner;
@@ -245,6 +252,12 @@ class RunTicTacToe {
         const body = document.getElementsByTagName('body')[0];
         body.appendChild(conatiner);
     }
+    static bigMessage(message) {
+        const body = document.getElementsByTagName('body')[0];
+        const h = document.createElement('h1');
+        h.innerText = message;
+        body.appendChild(h);
+    }
     static run() {
         return __awaiter(this, void 0, void 0, function* () {
             const g = new ticTacToe_1.TicTacToe();
@@ -252,8 +265,20 @@ class RunTicTacToe {
             const runner = new runGame_1.RunGame();
             const exampleStates = [];
             const exampleWinProbs = [];
-            runner.collectWinData(g, [s, s], exampleStates, exampleWinProbs, 1000);
+            const numGames = 1000;
+            runner.collectWinData(g, [s, s], exampleStates, exampleWinProbs, numGames);
             console.assert(exampleStates.length === exampleWinProbs.length);
+            console.assert(exampleWinProbs[0].length === g.getPlayerCount(), `Prob count: ${exampleWinProbs[0].length}`);
+            RunTicTacToe.bigMessage("Training Data");
+            for (let i = 0; i < 10; ++i) {
+                const index = Math.trunc(Math.random() * exampleStates.length);
+                const state = exampleStates[index];
+                const prob = exampleWinProbs[index];
+                RunTicTacToe.visualizeState(state, `${state.isEnded() ? "ended" : "-"}; ` +
+                    `to play: ${state.playerIndex}; ` +
+                    `X win: ${prob[0].toFixed(3)}; ` +
+                    `O win: ${prob[1].toFixed(3)}; `);
+            }
             const e1 = yield modelEstimator_1.ModelEstimator.make(g);
             const e2 = yield modelEstimator_1.ModelEstimator.make(g);
             const p1 = new winEstimatorStrategy_1.WinEstimatorStrategy(g, e1);
@@ -266,12 +291,14 @@ class RunTicTacToe {
             exampleWinProbs.splice(0, exampleWinProbs.length);
             exampleStates.splice(0, exampleStates.length);
             runner.collectWinData(g, [p1, p2], exampleStates, exampleWinProbs, 20);
+            RunTicTacToe.bigMessage("Game Results");
             for (let i = 0; i < 20; ++i) {
                 const state = exampleStates[i];
                 const prob = e1.probabilityOfWin([state]);
                 RunTicTacToe.visualizeState(state, `Win: ${exampleWinProbs[i]}; ` +
                     `to play: ${state.playerIndex}; ` +
-                    `prob: ${prob[0].toFixed(3)}`);
+                    `X win: ${prob[0][0].toFixed(3)}; ` +
+                    `O win: ${prob[0][1].toFixed(3)}; `);
             }
         });
     }
@@ -538,8 +565,8 @@ class WinEstimatorStrategy {
         const move = new move_1.Move(this.moveSize);
         const moveData = this.estimator.probabilityOfWin(stateData);
         for (let i = 0; i < this.moveSize; ++i) {
-            // Choose the move that gives our opponent the lowest chance of winning.
-            move.data[i] = 1.0 - moveData[i];
+            // Choose the move that gives us the highest chance of winning
+            move.data[i] = moveData[i][state.playerIndex];
         }
         for (const f of fatalMoves) {
             move.data[f] = 0.0;
