@@ -68,14 +68,14 @@ export class RunTicTacToe {
     const e1 = await ModelEstimator.make(g);
     const p1 = new WinEstimatorStrategy(g, e1);
 
-    for (let loop = 0; loop < 10; ++loop) {
+    for (let loop = 0; loop < 50; ++loop) {
       console.log("Training P1");
       await e1.train(exampleStates, exampleWinProbs);
       console.log("Done training.");
 
       exampleWinProbs.splice(0, exampleWinProbs.length);
       exampleStates.splice(0, exampleStates.length);
-      runner.collectWinData(g, [p1, p1], exampleStates, exampleWinProbs, 100);
+      runner.collectWinData(g, [p1, p1], exampleStates, exampleWinProbs, 300);
 
       RunTicTacToe.bigMessage(`Game Results ${loop + 1}`);
       for (let i = 0; i < 20; ++i) {
