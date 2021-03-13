@@ -20,6 +20,13 @@ export class State {
     this.winner = winner;
   }
 
+  clone(): State {
+    const resultState = new State(this.data.length,
+      this.playerIndex, this.winner);
+    resultState.data = new Float32Array(this.data);
+    return resultState;
+  }
+
   isEnded() {
     return this.winner >= 0;
   }
