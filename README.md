@@ -1,5 +1,23 @@
+
 # genie
 Learn to play.  Play to learn.
+
+# pre rec:
+
+For Visual Studio Code use these instructions:
+https://code.visualstudio.com/Docs/languages/typescript
+
+Install TypeScript:
+npm install -g typescript
+
+Install Webpack
+npm install -g webpack
+npm i --save-dev html-webpack-plugin
+
+Install TensorFlow for JavaScript
+*** note that there is a '-d' this time ***
+npm install -g -d @tensorflow/tfjs
+
 
 ## Development
 
