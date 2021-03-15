@@ -46,7 +46,7 @@ export class RunTicTacToe {
     const s = new RandomStrategy(g);
     const runner = new RunGame();
     const exampleStates: State[] = [];
-    const exampleWinProbs: number[][] = [];
+    const exampleWinProbs: Float32Array[] = [];
     const numGames = 1000;
     runner.collectWinData(g, [s, s], exampleStates, exampleWinProbs, numGames);
     console.assert(exampleStates.length === exampleWinProbs.length);
@@ -80,7 +80,7 @@ export class RunTicTacToe {
       RunTicTacToe.bigMessage(`Game Results ${loop + 1}`);
       for (let i = 0; i < 20; ++i) {
         const state = exampleStates[i];
-        const prob: number[][] = e1.probabilityOfWin([state]);
+        const prob: Float32Array[] = e1.probabilityOfWin([state]);
         RunTicTacToe.visualizeState(
           state, `Win: ${exampleWinProbs[i]}; ` +
           `to play: ${state.playerIndex}; ` +

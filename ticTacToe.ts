@@ -12,7 +12,7 @@ export class TicTacToe implements Game {
   }
 
   getInitialState() {
-    return new State(this.getStateSize(), 0);
+    return new State(this.getStateSize(), 0, this.getPlayerCount());
   }
 
   getMoveSize() {
@@ -66,25 +66,20 @@ export class TicTacToe implements Game {
     const offset = 9 * state.playerIndex;
     const i = this.getLargestIndex(move);
     const nextPlayer = 1 - state.playerIndex;
+    const nextState = state.clone();
     if (state.data[i] > 0.5 || state.data[i + 9] > 0.5) {
       // It is illegal to play on a square that already has an X or O.
       // This results in an immediate game over.
-      const nextState = new State(this.getStateSize(), nextPlayer, nextPlayer);
-      this.copyState(state.data, nextState.data);
+      nextState.ended = true;
       return nextState;
     }
-    const nextStateData = new Float32Array(this.getStateSize());
-    this.copyState(state.data, nextStateData);
-    nextStateData[offset + i] = 1.0;
-    if (this.checkForWin(offset, nextStateData)) {
-      const nextState = new State(this.getStateSize(),
-        state.playerIndex, state.playerIndex);
-      this.copyState(nextStateData, nextState.data);
-      return nextState;
+    nextState.data[offset + i] = 1.0;
+    if (this.checkForWin(offset, nextState.data)) {
+      nextState.winners[state.playerIndex] = 1.0;
+      nextState.ended = true;
     } else {
-      const nextState = new State(this.getStateSize(), nextPlayer);
-      this.copyState(nextStateData, nextState.data);
-      return nextState;
+      nextState.playerIndex = nextPlayer;
     }
+    return nextState;
   }
 }

@@ -1,31 +1,44 @@
 import { MoveNode } from "./gameDag";
 import { MonteCarloEstimator } from "./monteCarloEstimator";
-import { OneDie } from "./oneDie";
+import { RandomStrategy } from "./randomStrategy";
 import { RunGame } from "./runGame";
 import { State } from "./state";
+import { TicTacToe } from "./ticTacToe";
 import { WinEstimatorStrategy } from "./winEstimatorStrategy";
 
 function t1() {
-  const oneDie = new OneDie();
-  const estimator = new MonteCarloEstimator(oneDie);
+  const game = new TicTacToe();
+  const randomStrategy = new RandomStrategy(game);
+  const estimator = new MonteCarloEstimator(game);
   const strategy = new WinEstimatorStrategy(
-    oneDie, estimator, /*moveNoise=*/0.0);
+    game, estimator, /*moveNoise=*/0.0);
 
   const runner = new RunGame();
 
   const states: State[] = [];
-  const probs: number[][] = [];
+  const probs: Float32Array[] = [];
   const numGames = 100;
-  runner.collectWinData(oneDie, [strategy], states, probs, numGames);
+  runner.collectWinData(game, [strategy, randomStrategy],
+    states, probs, numGames);
 
-  let winRate = 0.0;
+  let mcWinRate = 0.0;
+  let randomWinRate = 0.0;
   for (const s of states) {
-    if (s.isEnded() && s.winner === 0) {
-      winRate += 1 / numGames;
+    if (s.isEnded()) {
+      if (s.winners[0] > 0) {
+        mcWinRate += 1 / numGames;
+        console.assert(s.winners[1] === 0);
+      }
+      if (s.winners[1] > 0) {
+        randomWinRate += 1 / numGames;
+        console.assert(s.winners[0] === 0);
+      }
     }
   }
-  console.log(`Win Rate: ${winRate}`);
-  console.assert(winRate > 0.8);
+  console.log(`MC Win Rate: ${mcWinRate.toFixed(3)}`);
+  console.log(`Random win Rate: ${randomWinRate.toFixed(3)}`);
+  console.assert(mcWinRate > 0.2);
+  console.assert(mcWinRate > randomWinRate);
 }
 
 t1();

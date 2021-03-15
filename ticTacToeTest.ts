@@ -8,7 +8,7 @@ function t1() {
   console.log("t1");
   const ttt = new TicTacToe();
 
-  const almostWinning = new State(ttt.getStateSize(), 0);
+  const almostWinning = new State(ttt.getStateSize(), 0, ttt.getPlayerCount());
   almostWinning.data[0] = 1;
   almostWinning.data[1] = 1;
 
@@ -18,14 +18,14 @@ function t1() {
   const winning = ttt.applyMove(almostWinning, winningMove);
 
   console.assert(winning.isEnded());
-  console.assert(winning.winner == 0);
+  console.assert(winning.winners[0] == 1);
 }
 
 function t2() {
   console.log("t2");
   const ttt = new TicTacToe();
 
-  const almostWinning = new State(ttt.getStateSize(), 0);
+  const almostWinning = new State(ttt.getStateSize(), 0, ttt.getPlayerCount());
   almostWinning.data[0] = 1;
   almostWinning.data[6] = 1;
 
@@ -35,7 +35,7 @@ function t2() {
   const winning = ttt.applyMove(almostWinning, winningMove);
 
   console.assert(winning.isEnded());
-  console.assert(winning.winner == 0);
+  console.assert(winning.winners[0] === 1.0);
 }
 
 

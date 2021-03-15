@@ -39,7 +39,7 @@ class ModelEstimator {
                 const input = tf.input({ shape: [game.getStateSize()] });
                 const l1 = tf.layers.dense({ units: 18 }).apply(input);
                 const l2 = tf.layers.dense({ units: 3 }).apply(l1);
-                const o = tf.layers.dense({ units: game.getPlayerCount(), activation: 'hardSigmoid' })
+                const o = tf.layers.dense({ units: game.getPlayerCount(), activation: 'softmax' })
                     .apply(l2);
                 result.model = tf.model({ inputs: input, outputs: o });
                 result.model.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
@@ -184,6 +184,8 @@ class RunGame {
         }
         return winner;
     }
+    // outWinProb will be populated with indicators (0 for loss, 1 for win)
+    // for the players in the game.
     collectWinData(game, strategies, outStates, outWinProb, gameCount) {
         let winCount = 0;
         for (let i = 0; i < gameCount; ++i) {
@@ -281,13 +283,13 @@ class RunTicTacToe {
             }
             const e1 = yield modelEstimator_1.ModelEstimator.make(g);
             const p1 = new winEstimatorStrategy_1.WinEstimatorStrategy(g, e1);
-            for (let loop = 0; loop < 10; ++loop) {
+            for (let loop = 0; loop < 50; ++loop) {
                 console.log("Training P1");
                 yield e1.train(exampleStates, exampleWinProbs);
                 console.log("Done training.");
                 exampleWinProbs.splice(0, exampleWinProbs.length);
                 exampleStates.splice(0, exampleStates.length);
-                runner.collectWinData(g, [p1, p1], exampleStates, exampleWinProbs, 100);
+                runner.collectWinData(g, [p1, p1], exampleStates, exampleWinProbs, 300);
                 RunTicTacToe.bigMessage(`Game Results ${loop + 1}`);
                 for (let i = 0; i < 20; ++i) {
                     const state = exampleStates[i];
@@ -421,6 +423,11 @@ class State {
             }
         }
         return data;
+    }
+    clone() {
+        const resultState = new State(this.data.length, this.playerIndex, this.winner);
+        resultState.data = new Float32Array(this.data);
+        return resultState;
     }
     isEnded() {
         return this.winner >= 0;

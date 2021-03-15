@@ -12,7 +12,7 @@ export class RunOneDie {
     const pixelData = new Uint8ClampedArray(30 * 30 * 4);
     for (let x = 0; x < 30; ++x) {
       for (let y = 0; y < 30; ++y) {
-        const state = new State(game.getStateSize(), 0)
+        const state = new State(game.getStateSize(), 0, game.getPlayerCount());
         state.data[0] = x;
         state.data[1] = round;
         state.data[2] = y;
@@ -62,9 +62,10 @@ export class RunOneDie {
     const body = document.getElementsByTagName('body')[0];
     body.append(resultDiv);
 
-    function addRow(trainingSession: number, winRate: number) {
+    // TODO: Nice if we could plumb the win rate back in here.
+    function addRow(trainingSession: number) {
       const row = document.createElement('div');
-      row.innerText = `${trainingSession}, ${winRate}`;
+      row.innerText = `${trainingSession}`;
       resultDiv.appendChild(row);
     }
 
@@ -102,9 +103,9 @@ export class RunOneDie {
           trainingMoves.shift();
         }
         // TODO: Do something with the output data.
-        const winRate = runner.collectWinData(g, [m, m], [], [], 1000);
+        runner.collectWinData(g, [m, m], [], [], 1000);
         ++trainingSession;
-        addRow(trainingSession, winRate);
+        addRow(trainingSession);
         if (trainingStates.length <= 10000) {
           // If we didn't collect much new data, add some more random strategy data.
           runner.collectWinData(g, [s, s], [], [], 1000);

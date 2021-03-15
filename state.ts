@@ -12,22 +12,35 @@ export class State {
   data: Float32Array;
   // Negative number indicates the game is not over.
   // Positive number indicates the winner's player index.
-  winner: number;
-  readonly playerIndex: number;
-  constructor(dataSize: number, playerIndex: number, winner: number = -1) {
+  winners: Float32Array;
+  ended: boolean;
+  playerIndex: number;
+  constructor(dataSize: number, playerIndex: number, playerCount: number) {
     this.playerIndex = playerIndex;
     this.data = new Float32Array(dataSize);
-    this.winner = winner;
+    this.winners = new Float32Array(playerCount);
+    this.ended = false;
   }
 
   clone(): State {
     const resultState = new State(this.data.length,
-      this.playerIndex, this.winner);
+      this.playerIndex, this.winners.length);
     resultState.data = new Float32Array(this.data);
+    resultState.winners = new Float32Array(this.winners);
+    resultState.ended = this.ended;
     return resultState;
   }
 
-  isEnded() {
-    return this.winner >= 0;
+  isEnded(): boolean {
+    return this.ended;
+  }
+
+  hasWinner(): boolean {
+    for (const w of this.winners) {
+      if (w > 0) {
+        return true;
+      }
+    }
+    return false;
   }
 }

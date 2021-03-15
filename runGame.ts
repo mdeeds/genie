@@ -28,7 +28,7 @@ export class RunGame {
   // Runs the game, returns the player number who won or -1 if there is
   // no winner.
   private run(game: Game, strategies: Strategy[],
-    outStates: State[], outWinProb: number[][]): number {
+    outStates: State[], outWinProb: Float32Array[]): void {
     const states: State[] = [];
 
     console.assert(game.getPlayerCount() === strategies.length);
@@ -40,34 +40,20 @@ export class RunGame {
       state = game.applyMove(state, move);
     }
     states.push(state);
-    const winner = state.winner;
+    const winners = state.winners;
     for (const s of states) {
       outStates.push(s);
-      outWinProb.push([]);
-      const i = outWinProb.length - 1;
-      for (let j = 0; j < game.getPlayerCount(); ++j) {
-        if (j === winner) {
-          outWinProb[i].push(1.0);
-        } else {
-          outWinProb[i].push(0.0);
-        }
-      }
+      outWinProb.push(winners);
     }
-    return winner;
   }
 
   // outWinProb will be populated with indicators (0 for loss, 1 for win)
   // for the players in the game.
   collectWinData(game: Game, strategies: Strategy[],
-    outStates: State[], outWinProb: number[][], gameCount: number) {
-    let winCount = 0;
+    outStates: State[], outWinProb: Float32Array[], gameCount: number): void {
     for (let i = 0; i < gameCount; ++i) {
-      const winner = this.run(game, strategies, outStates, outWinProb);
-      if (winner >= 0) {
-        ++winCount;
-      }
+      this.run(game, strategies, outStates, outWinProb);
     }
-    return winCount / gameCount;
   }
 
   getSnacks() {

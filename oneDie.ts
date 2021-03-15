@@ -18,7 +18,7 @@ export class OneDie implements Game {
   }
 
   getInitialState() {
-    return new State(this.getStateSize(), 0);
+    return new State(this.getStateSize(), 0, this.getPlayerCount());
   }
 
   // [ current score, current round, totalScore]
@@ -58,10 +58,11 @@ export class OneDie implements Game {
     }
     if (newState.data[OneDie.kRoundIndex] === this.roundCount) {
       if (newState.data[OneDie.kTotalScore] >= this.winningScore) {
-        newState.winner = 0;
+        newState.winners[0] = 1.0;
       } else {
-        newState.winner = 1;
+        newState.winners[0] = 0.0;
       }
+      newState.ended = true;
     }
     return newState;
   }

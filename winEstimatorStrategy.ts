@@ -29,7 +29,7 @@ export class WinEstimatorStrategy implements Strategy {
       move.data[i] = 1.0;
       const nextState = this.game.applyMove(state, move);
       if (nextState.isEnded()) {
-        if (state.playerIndex === nextState.winner) {
+        if (nextState.winners[state.playerIndex] > 0) {
           // Easy.  We just won.
           return move;
         } else {
@@ -41,7 +41,7 @@ export class WinEstimatorStrategy implements Strategy {
     }
 
     const move = new Move(this.moveSize);
-    const moveData: number[][] = this.estimator.probabilityOfWin(stateData);
+    const moveData: Float32Array[] = this.estimator.probabilityOfWin(stateData);
     for (let i = 0; i < this.moveSize; ++i) {
       // Choose the move that gives us the highest chance of winning
       const noise = (Math.random() - 0.5) * this.moveNoise * 2;
