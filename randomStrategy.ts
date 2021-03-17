@@ -11,8 +11,9 @@ export class RandomStrategy implements Strategy {
 
   getMove(state: State): Move {
     const move = new Move(this.moveSize);
-    const moveNumber = Math.trunc(Math.random() * this.moveSize);
-    move.data[moveNumber] = 1.0;
+    for (let i = 0; i < move.data.length; ++i) {
+      move.data[i] = Math.random();
+    }
     return move;
   }
 }
