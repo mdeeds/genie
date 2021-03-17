@@ -36,8 +36,8 @@ function t1() {
         console.assert(s.winners[0] === 0);
       }
       if (s.winners[0] === 0 && s.winners[1] === 0) {
-        console.log("AAAAA Double loss!!!");
-        console.log(s.data);
+        console.error("Double loss!!")
+        console.error(s.data);
       }
     }
   }
