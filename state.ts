@@ -15,6 +15,11 @@ export class State {
   winners: Float32Array;
   ended: boolean;
   playerIndex: number;
+
+  toString() {
+    return `${this.data}:${this.winners}:${this.ended}:${this.playerIndex}`;
+  }
+
   constructor(dataSize: number, playerIndex: number, playerCount: number) {
     this.playerIndex = playerIndex;
     this.data = new Float32Array(dataSize);
