@@ -81,7 +81,6 @@ export class RunOneDie {
 
       const trainingStates: State[] = [];
       const trainingMoves: Move[] = [];
-      runner.getSnacks().getMoveVectors(trainingStates, trainingMoves)
 
       const trainStart = window.performance.now();
       m.train(trainingStates, trainingMoves).then((history) => {
