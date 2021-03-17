@@ -84,9 +84,6 @@ function snacks() {
   while (!strategy.done()) {
     let previousState: State = null;
     let state: State = game.getInitialState();
-    if (previousState) {
-      addOrInsert(sm, state, previousState);
-    }
     let depth = 0;
     while (!state.isEnded() && depth < maxDepth) {
       const move = strategy.getMove(state);
@@ -119,10 +116,6 @@ function snacks() {
   // a player makes an illegal move and forfeits the game.  Total: 9996
   console.assert(sm.size() === 9996)
   console.log(`Distinct States: ${sm.size()}`);
-
-  for (const k of sm.stringKeys()) {
-    console.log(k);
-  }
 }
 
 oneBranch();
