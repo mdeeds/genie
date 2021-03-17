@@ -38,9 +38,26 @@ function t2() {
   console.assert(winning.winners[0] === 1.0);
 }
 
+function playOrderedMoves() {
+  // Playing moves in order results in this:
+  // X O X
+  // O X O
+  // X . .
+  const ttt = new TicTacToe();
+  let state = ttt.getInitialState();
+  for (let i = 0; i < 7; ++i) {
+    const move = new Move(ttt.getMoveSize());
+    move.data[i] = 1.0;
+    state = ttt.applyMove(state, move);
+  }
+  console.assert(state.isEnded);
+  console.assert(state.winners[0] === 1.0);
+  console.assert(state.winners[1] === 0.0);
+}
 
 t1();
 t2();
+playOrderedMoves();
 
 console.log("Done testing.");
 
