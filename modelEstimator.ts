@@ -24,9 +24,9 @@ export class ModelEstimator implements Estimator {
       tf.setBackend('cpu').then(() => {
         const input = tf.input({ shape: [game.getStateSize()] });
 
-        const l1 = tf.layers.dense({ units: 18 }).apply(input);
-        const l2 = tf.layers.dense({ units: 9 }).apply(l1);
-        const l3 = tf.layers.dense({ units: 9 }).apply(l2);
+        const l1 = tf.layers.dense({ units: 64 }).apply(input);
+        const l2 = tf.layers.dense({ units: 64 }).apply(l1);
+        const l3 = tf.layers.dense({ units: 64 }).apply(l2);
         const o = tf.layers.dense(
           { units: game.getPlayerCount(), activation: 'softmax' })
           .apply(l3) as tf.SymbolicTensor;
@@ -34,6 +34,7 @@ export class ModelEstimator implements Estimator {
         result.model = tf.model({ inputs: input, outputs: o });
         result.model.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
         console.log("Compiled.");
+        result.model.summary();
         resolve(result);
       });
     });
@@ -70,6 +71,6 @@ export class ModelEstimator implements Estimator {
     const y = tf.tensor(winProbabilities,
       [winProbabilities.length, this.game.getPlayerCount()],
       'float32');
-    return this.model.fit(x, y, { epochs: 10 });
+    return this.model.fit(x, y, { epochs: 10, shuffle: true });
   }
 }
