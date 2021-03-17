@@ -1,9 +1,9 @@
 import { State } from "./state";
 
 export class StateSet {
-  private set: Set<string>;
+  private set: Map<string, State>;
   constructor() {
-    this.set = new Set<string>();
+    this.set = new Map<string, State>();
   }
 
   has(state: State): boolean {
@@ -11,7 +11,11 @@ export class StateSet {
   }
 
   add(state: State) {
-    this.set.add(state.toString());
+    this.set.set(state.toString(), state);
+  }
+
+  values() {
+    return this.set.values();
   }
 
   size() {
