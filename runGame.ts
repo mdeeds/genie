@@ -58,22 +58,32 @@ export class RunGame {
 
   private addWinData(visitedStates: StateMap<StateSet>,
     state: State, winners: Float32Array,
-    outStates: State[], outWinProb: Float32Array[], depth: number) {
+    outStates: State[], outWinProb: Float32Array[],
+    depth: number) {
     if (depth === 0) {
       return;
     }
     outStates.push(state);
     outWinProb.push(winners);
+
+    const lessWinners = new Float32Array(winners);
+    // Blend toward 50% probability.  Keep 50% (alpha) of previous value.
+    const alpha = 0.5;
+    for (let i = 0; i < lessWinners.length; ++i) {
+      lessWinners[i] = 0.5 * (1 - alpha) + lessWinners[i] * alpha;
+    }
+
     if (visitedStates.has(state)) {
       for (const previousState of visitedStates.get(state).values()) {
         this.addWinData(visitedStates, previousState,
-          winners, outStates, outWinProb, depth - 1);
+          lessWinners, outStates, outWinProb, depth - 1);
       }
     }
   }
 
   // Make the X and O win states disjoint.  Also add 
   // a set of states where either can win, and give that a 50% probability.
+  // Better would be to make this a minimax estimate.
   private reduceWinData(inOutStates: State[], inOutWinProbs: Float32Array[]) {
     const playerZeroWinStates = new StateSet();
     const playerZeroLoseStates = new StateSet();
@@ -149,7 +159,7 @@ export class RunGame {
       if (!state.isForfeit() && state.hasWinner()) {
         // This was a legitimate win.
         this.addWinData(visitedStates, state, state.winners,
-          outStates, outWinProb, 4);
+          outStates, outWinProb, 6);
       }
       strategy.nextBranch();
     }
