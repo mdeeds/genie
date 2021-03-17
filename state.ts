@@ -14,10 +14,12 @@ export class State {
   // Positive number indicates the winner's player index.
   winners: Float32Array;
   ended: boolean;
+  forfeit: boolean;
   playerIndex: number;
 
   toString() {
-    return `${this.data}:${this.winners}:${this.ended}:${this.playerIndex}`;
+    const endState = this.ended ? (this.forfeit ? 'F' : 'W') : '-';
+    return `${this.data}:${this.winners}:${endState}:${this.playerIndex}`;
   }
 
   constructor(dataSize: number, playerIndex: number, playerCount: number) {
@@ -38,6 +40,10 @@ export class State {
 
   isEnded(): boolean {
     return this.ended;
+  }
+
+  isForfeit(): boolean {
+    return this.forfeit;
   }
 
   hasWinner(): boolean {

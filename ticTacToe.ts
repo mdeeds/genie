@@ -71,6 +71,7 @@ export class TicTacToe implements Game {
       // It is illegal to play on a square that already has an X or O.
       // This results in an immediate game over.
       nextState.ended = true;
+      nextState.forfeit = true;
       nextState.winners[nextPlayer] = 1.0;
       return nextState;
     }
@@ -80,6 +81,14 @@ export class TicTacToe implements Game {
       nextState.ended = true;
     } else {
       nextState.playerIndex = nextPlayer;
+    }
+    let moveCount = 0;
+    for (const c of state.data) {
+      moveCount += c;
+    }
+    if (moveCount === 9) {
+      nextState.ended = true;
+      nextState.forfeit = false;
     }
     return nextState;
   }
