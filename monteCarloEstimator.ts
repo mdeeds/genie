@@ -1,9 +1,11 @@
 import { Estimator } from "./estimator";
 import { Game } from "./game";
+import { RandomEstimator } from "./randomEstimator";
 import { RandomStrategy } from "./randomStrategy";
 import { RunGame } from "./runGame";
 import { State } from "./state";
 import { Strategy } from "./strategy";
+import { WinEstimatorStrategy } from "./winEstimatorStrategy";
 
 export class MonteCarloEstimator implements Estimator {
   private playerCount: number;
@@ -14,7 +16,7 @@ export class MonteCarloEstimator implements Estimator {
   constructor(game: Game) {
     this.game = game;
     this.playerCount = game.getPlayerCount();
-    this.strategy = new RandomStrategy(game);
+    this.strategy = new WinEstimatorStrategy(game, new RandomEstimator(game));
     this.runner = new RunGame();
   }
 

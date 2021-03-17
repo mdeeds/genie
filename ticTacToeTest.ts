@@ -55,9 +55,30 @@ function playOrderedMoves() {
   console.assert(state.winners[1] === 0.0);
 }
 
+function repeatMove() {
+  const ttt = new TicTacToe();
+  let state = ttt.getInitialState();
+
+  const move1 = new Move(ttt.getMoveSize());
+  move1.data[0] = 1;
+  const move2 = new Move(ttt.getMoveSize());
+  move2.data[0] = 1;
+  console.log("Applying Move 1");
+  state = ttt.applyMove(state, move1);
+  console.assert(!state.isEnded());
+  console.log("Applying Move 2");
+  state = ttt.applyMove(state, move2);
+  console.assert(state.isEnded());
+  console.log("Checking winner");
+  console.assert(state.winners[0] === 1.0);
+  console.assert(state.winners[1] === 0.0);
+}
+
+
 t1();
 t2();
 playOrderedMoves();
+repeatMove();
 
 console.log("Done testing.");
 
