@@ -21,4 +21,8 @@ export class StateSet {
   size() {
     return this.set.size;
   }
+
+  delete(state: State) {
+    this.set.delete(state.toString());
+  }
 }
