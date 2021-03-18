@@ -27,6 +27,14 @@ class OneDie:
     def getPlayerCount(self):
         return self.numberOfPlayers
 
+    def getPossibleStates(self):
+        states = []
+        for currentScore in range(self.winningScore):
+            for currentRound in range(self.roundCount):
+                for totalScore in range(self.winningScore):
+                    states.append([currentScore, currentRound, totalScore, 0])
+        return states
+
     # [ current score, current round, totalScore]
     def getStateSize(self):
         return OneDie.kStatePerPlayer * self.numberOfPlayers + 1
