@@ -1,8 +1,9 @@
 import random
 
 import tensorflow as tf
+import numpy as np
 
-import oneDie as game
+import ticTacToe as game
 
 
 class ModelStrategy:
@@ -12,11 +13,13 @@ class ModelStrategy:
     dictionaryModel = None
     moveNoise = 0.0
     moveDictionary = dict()
+    thisGame = None
 
     def __init__(self, game, moveNoise=0.05):
         self.stateSize = game.getStateSize()
         self.moveSize = game.getMoveSize()
         self.moveNoise = moveNoise
+        self.thisGame = game
         input = tf.keras.layers.Input(shape=(game.getStateSize()))
         flat = tf.keras.layers.Flatten()(input)
         l1 = tf.keras.layers.Dense(units=12, activation='relu')(flat)
@@ -47,12 +50,24 @@ class ModelStrategy:
         else:
             self.dictionaryModel = self.model
             self.moveDictionary = dict()
+            states = self.thisGame.getPossibleStates()
+            inputTensor = tf.constant(states, 'float32')
+            moveTensor = self.model.predict(inputTensor)
+            for move in moveTensor:
+                self.moveDictionary[str(state)] = move
+
         inputTensor = tf.constant([state], 'float32')
         moveTensor = self.model.predict(inputTensor)
         move = moveTensor[0]
         self.moveDictionary[str(state)] = move
         move = self.applyNoise(move, self.moveNoise)
         return move
+
+    def load(self, fname):
+        self.model = tf.keras.models.load_model(fname)
+
+    def save(self, fname):
+        self.model.save(fname)
 
     def train(self, states, moves):
         checkpoint = tf.keras.callbacks.ModelCheckpoint(
