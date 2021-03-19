@@ -111,17 +111,15 @@ class Table {
                 break;
             case 'mousedown':
                 this.dragging = ev.target;
+                this.dragging.classList.add('dragging');
                 break;
             case 'mouseup':
                 this.checkMagnets(token);
+                this.dragging.classList.remove('dragging');
                 this.dragging = null;
-                break;
+                return;
         }
-        if (ev.movementX === null || ev.movementY === null) {
-            return;
-        }
-        token.style.left = `${token.offsetLeft + ev.movementX}px`;
-        token.style.top = `${token.offsetTop + ev.movementY}px`;
+        this.moveToXY(token, ev.clientX, ev.clientY);
     }
 }
 exports.Table = Table;
