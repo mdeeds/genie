@@ -18,6 +18,7 @@ class Magnet {
 
 export class Table {
   private container: HTMLDivElement;
+  private display: HTMLDivElement;
 
   // Ordered list of magnets.  The order in this list
   // corresponds to the order in the state vector.
@@ -45,17 +46,15 @@ export class Table {
       }
     }
 
-    const display = document.createElement('div');
-    display.classList.add('display');
-    body.appendChild(display);
-    display.innerText = "** D I S P L A Y **";
-    this.updateLoop(display);
+    this.display = document.createElement('div');
+    this.display.classList.add('display');
+    body.appendChild(this.display);
+    this.display.innerText = "** D I S P L A Y **";
+    this.updateDisplay();
   }
 
-  private updateLoop(display: HTMLDivElement) {
-    display.innerText = `${this.getStateData()}`;
-
-    setTimeout(() => { this.updateLoop(display); }, 100);
+  private updateDisplay() {
+    this.display.innerText = `${this.getStateData()}`;
   }
 
   private addBag(label: string, x: number, y: number) {
@@ -143,6 +142,7 @@ export class Table {
         break;
       }
     }
+    this.updateDisplay();
   }
 
   private dragging: Token;
