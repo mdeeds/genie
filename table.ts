@@ -1,4 +1,3 @@
-
 class Token {
   label: string;
   element: HTMLSpanElement;
@@ -38,8 +37,10 @@ export class Table {
     body.appendChild(this.container);
 
     for (let i = 0; i < 5; ++i) {
-      this.addToken("X", 100 + i * 20, 100);
-      this.addToken("O", 100 + i * 30, 150);
+      this.addToken("X", 50 + i * 30, 100);
+    }
+    for (let i = 0; i < 4; ++i) {
+      this.addToken("O", 65 + i * 30, 150);
     }
 
     for (let i = 0; i < 3; ++i) {
@@ -143,8 +144,10 @@ export class Table {
       case 'mousedown':
         this.dragging = ev.target as HTMLSpanElement;
         this.dragging.classList.add('dragging');
-        token.magnet.token = null;
-        token.magnet = null;
+        if (token.magnet !== null) {
+          token.magnet.token = null;
+          token.magnet = null;
+        }
         break;
       case 'mouseup':
         this.checkMagnets(token);

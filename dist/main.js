@@ -20,47 +20,70 @@ const table = new table_1.Table();
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Table = void 0;
+class Token {
+    constructor(label, element) {
+        this.magnet = null;
+        this.label = label;
+        this.element = element;
+    }
+}
+class Magnet {
+    constructor(element) {
+        this.token = null;
+        this.element = element;
+    }
+}
 class Table {
     constructor() {
-        this.magnets = new Set();
+        this.magnets = [];
+        this.tokenIndex = new Map();
         const body = document.getElementsByTagName('body')[0];
         this.container = document.createElement('div');
         this.container.classList.add('table');
         body.appendChild(this.container);
         for (let i = 0; i < 5; ++i) {
-            this.addToken("X", 100 + i * 20, 100);
-            this.addToken("O", 100 + i * 30, 150);
+            this.addToken("X", 50 + i * 30, 100);
+        }
+        for (let i = 0; i < 4; ++i) {
+            this.addToken("O", 65 + i * 30, 150);
         }
         for (let i = 0; i < 3; ++i) {
             for (let j = 0; j < 3; ++j) {
                 this.addMagnet(i * 50 + 300, j * 50 + 100);
             }
         }
+        const display = document.createElement('div');
+        display.classList.add('display');
+        body.appendChild(display);
+        display.innerText = "** D I S P L A Y **";
+        this.updateLoop(display);
+    }
+    updateLoop(display) {
+        display.innerText = `${this.getStateData()}`;
+        setTimeout(() => { this.updateLoop(display); }, 100);
     }
     addToken(label, x, y) {
+        if (!this.tokenIndex.has(label)) {
+            this.tokenIndex.set(label, this.tokenIndex.size);
+        }
         const token = document.createElement('span');
         token.innerText = label;
         token.classList.add('token');
         token.style.left = `${x}px`;
         token.style.top = `${y}px`;
+        const t = new Token(label, token);
         token.addEventListener('mousedown', (me) => {
-            this.handleMouseEvent(token, me);
+            this.handleMouseEvent(t, me);
         });
         token.addEventListener('mousemove', (me) => {
-            this.handleMouseEvent(token, me);
+            this.handleMouseEvent(t, me);
         });
         token.addEventListener('mouseout', (me) => {
-            this.handleMouseEvent(token, me);
+            this.handleMouseEvent(t, me);
         });
         token.addEventListener('mouseup', (me) => {
-            this.handleMouseEvent(token, me);
+            this.handleMouseEvent(t, me);
         });
-        // this.container.addEventListener('mousemove',
-        //   (me) => {
-        //     if (this.dragging) {
-        //       this.handleMouseEvent(this.dragging, me);
-        //     }
-        //   })
         this.container.appendChild(token);
     }
     addMagnet(x, y) {
@@ -69,7 +92,8 @@ class Table {
         magnet.style.left = `${x}px`;
         magnet.style.top = `${y}px`;
         this.container.appendChild(magnet);
-        this.magnets.add(magnet);
+        const m = new Magnet(magnet);
+        this.magnets.push(m);
     }
     intersects(a, b) {
         if (a.left <= b.right && a.top <= b.bottom &&
@@ -82,8 +106,8 @@ class Table {
     }
     moveToXY(token, x, y) {
         const tokenBB = token.getBoundingClientRect();
-        token.style.left = `${x - tokenBB.width / 2 - this.container.offsetLeft}px`;
-        token.style.top = `${y - tokenBB.height / 2 - this.container.offsetTop}px`;
+        token.style.left = `${x - tokenBB.width / 2}px`;
+        token.style.top = `${y - tokenBB.height / 2}px`;
     }
     moveToCenter(token, location) {
         const x = (location.left + location.right) / 2;
@@ -91,11 +115,13 @@ class Table {
         this.moveToXY(token, x, y);
     }
     checkMagnets(token) {
-        const tokenBB = token.getBoundingClientRect();
+        const tokenBB = token.element.getBoundingClientRect();
         for (const m of this.magnets) {
-            const magnetBB = m.getBoundingClientRect();
+            const magnetBB = m.element.getBoundingClientRect();
             if (this.intersects(magnetBB, tokenBB)) {
-                this.moveToCenter(token, magnetBB);
+                this.moveToCenter(token.element, magnetBB);
+                m.token = token;
+                token.magnet = m;
                 break;
             }
         }
@@ -112,6 +138,10 @@ class Table {
             case 'mousedown':
                 this.dragging = ev.target;
                 this.dragging.classList.add('dragging');
+                if (token.magnet !== null) {
+                    token.magnet.token = null;
+                    token.magnet = null;
+                }
                 break;
             case 'mouseup':
                 this.checkMagnets(token);
@@ -119,7 +149,20 @@ class Table {
                 this.dragging = null;
                 return;
         }
-        this.moveToXY(token, ev.clientX, ev.clientY);
+        this.moveToXY(token.element, ev.clientX, ev.clientY);
+    }
+    getStateData() {
+        const numTokens = this.tokenIndex.size;
+        const numMagnets = this.magnets.length;
+        const result = new Float32Array(numTokens * numMagnets);
+        for (let i = 0; i < this.magnets.length; ++i) {
+            const m = this.magnets[i];
+            if (m.token !== null) {
+                const tokenIndex = this.tokenIndex.get(m.token.label);
+                result[i + tokenIndex * numMagnets] = 1.0;
+            }
+        }
+        return result;
     }
 }
 exports.Table = Table;
