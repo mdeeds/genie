@@ -88,7 +88,6 @@
   border-bottom: 0px solid black;
   padding: 6px;
   box-shadow: 3px 3px 6px #0004;
-  background: linear-gradient(0.25turn, #111, #000, #111, #555);
+  background: linear-gradient(0.27turn, #555, #222, #000, #222);
   color: #fff
 }
-
