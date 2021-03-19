@@ -36,16 +36,12 @@ export class Table {
     this.container.classList.add('table');
     body.appendChild(this.container);
 
-    for (let i = 0; i < 5; ++i) {
-      this.addToken("X", 50 + i * 30, 100);
-    }
-    for (let i = 0; i < 4; ++i) {
-      this.addToken("O", 65 + i * 30, 150);
-    }
+    this.addBag("X", 50, 100);
+    this.addBag("O", 50, 200);
 
     for (let i = 0; i < 3; ++i) {
       for (let j = 0; j < 3; ++j) {
-        this.addMagnet(i * 50 + 300, j * 50 + 100);
+        this.addMagnet(i * 50 + 200, j * 50 + 100);
       }
     }
 
@@ -62,7 +58,24 @@ export class Table {
     setTimeout(() => { this.updateLoop(display); }, 100);
   }
 
-  private addToken(label: string, x: number, y: number) {
+  private addBag(label: string, x: number, y: number) {
+    if (!this.tokenIndex.has(label)) {
+      this.tokenIndex.set(label, this.tokenIndex.size);
+    }
+    const elt = document.createElement('span');
+    elt.classList.add('bag');
+    elt.style.left = `${x}px`;
+    elt.style.top = `${y}px`;
+    elt.innerText = label;
+    this.container.appendChild(elt);
+
+    elt.addEventListener('mousedown', (me) => {
+      const t = this.makeToken(label, x, y);
+      this.handleMouseEvent(t, me);
+    });
+  }
+
+  private makeToken(label: string, x: number, y: number): Token {
     if (!this.tokenIndex.has(label)) {
       this.tokenIndex.set(label, this.tokenIndex.size);
     }
@@ -85,6 +98,7 @@ export class Table {
       this.handleMouseEvent(t, me);
     });
     this.container.appendChild(token);
+    return t;
   }
 
   addMagnet(x: number, y: number) {
@@ -131,19 +145,19 @@ export class Table {
     }
   }
 
-  private dragging: HTMLSpanElement;
+  private dragging: Token;
   private handleMouseEvent(token: Token, ev: MouseEvent) {
     ev.preventDefault();
     switch (ev.type) {
       case 'mousemove':
       case 'mouseout':
-        if (this.dragging != ev.target) {
+        if (this.dragging != token) {
           return;
         }
         break;
       case 'mousedown':
-        this.dragging = ev.target as HTMLSpanElement;
-        this.dragging.classList.add('dragging');
+        this.dragging = token;
+        this.dragging.element.classList.add('dragging');
         if (token.magnet !== null) {
           token.magnet.token = null;
           token.magnet = null;
@@ -151,7 +165,7 @@ export class Table {
         break;
       case 'mouseup':
         this.checkMagnets(token);
-        this.dragging.classList.remove('dragging');
+        this.dragging.element.classList.remove('dragging');
         this.dragging = null;
         return;
     }

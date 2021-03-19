@@ -41,15 +41,11 @@ class Table {
         this.container = document.createElement('div');
         this.container.classList.add('table');
         body.appendChild(this.container);
-        for (let i = 0; i < 5; ++i) {
-            this.addToken("X", 50 + i * 30, 100);
-        }
-        for (let i = 0; i < 4; ++i) {
-            this.addToken("O", 65 + i * 30, 150);
-        }
+        this.addBag("X", 50, 100);
+        this.addBag("O", 50, 200);
         for (let i = 0; i < 3; ++i) {
             for (let j = 0; j < 3; ++j) {
-                this.addMagnet(i * 50 + 300, j * 50 + 100);
+                this.addMagnet(i * 50 + 200, j * 50 + 100);
             }
         }
         const display = document.createElement('div');
@@ -62,7 +58,22 @@ class Table {
         display.innerText = `${this.getStateData()}`;
         setTimeout(() => { this.updateLoop(display); }, 100);
     }
-    addToken(label, x, y) {
+    addBag(label, x, y) {
+        if (!this.tokenIndex.has(label)) {
+            this.tokenIndex.set(label, this.tokenIndex.size);
+        }
+        const elt = document.createElement('span');
+        elt.classList.add('bag');
+        elt.style.left = `${x}px`;
+        elt.style.top = `${y}px`;
+        elt.innerText = label;
+        this.container.appendChild(elt);
+        elt.addEventListener('mousedown', (me) => {
+            const t = this.makeToken(label, x, y);
+            this.handleMouseEvent(t, me);
+        });
+    }
+    makeToken(label, x, y) {
         if (!this.tokenIndex.has(label)) {
             this.tokenIndex.set(label, this.tokenIndex.size);
         }
@@ -85,6 +96,7 @@ class Table {
             this.handleMouseEvent(t, me);
         });
         this.container.appendChild(token);
+        return t;
     }
     addMagnet(x, y) {
         const magnet = document.createElement('span');
@@ -131,13 +143,13 @@ class Table {
         switch (ev.type) {
             case 'mousemove':
             case 'mouseout':
-                if (this.dragging != ev.target) {
+                if (this.dragging != token) {
                     return;
                 }
                 break;
             case 'mousedown':
-                this.dragging = ev.target;
-                this.dragging.classList.add('dragging');
+                this.dragging = token;
+                this.dragging.element.classList.add('dragging');
                 if (token.magnet !== null) {
                     token.magnet.token = null;
                     token.magnet = null;
@@ -145,7 +157,7 @@ class Table {
                 break;
             case 'mouseup':
                 this.checkMagnets(token);
-                this.dragging.classList.remove('dragging');
+                this.dragging.element.classList.remove('dragging');
                 this.dragging = null;
                 return;
         }
