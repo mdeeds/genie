@@ -9,17 +9,18 @@ function t1() {
 
   const ttt = new TicTacToe();
   const de = new DumbEstimator(ttt);
-  const p1 = new WinEstimatorStrategy(ttt, de);
-  const p2 = new WinEstimatorStrategy(ttt, de);
+  const p1 = new WinEstimatorStrategy(ttt, de, 0.0);
+  const p2 = new WinEstimatorStrategy(ttt, de, 0.0);
 
   const states: State[] = [];
-  const probs: number[][] = [];
+  const probs: Float32Array[] = [];
   runner.collectWinData(ttt, [p1, p2], states, probs, 2);
 
   for (const s of states) {
     console.log(s.data);
     if (s.isEnded()) {
-      console.log(`Winner: ${s.winner}`);
+      console.log(`Winners: ${s.winners}`);
+      console.assert(s.winners.length === ttt.getPlayerCount());
     }
   }
 

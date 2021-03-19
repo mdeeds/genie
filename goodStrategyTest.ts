@@ -9,13 +9,13 @@ function t1() {
   const runner = new RunGame();
 
   const states: State[] = [];
-  const probs: number[][] = [];
+  const probs: Float32Array[] = [];
   const numGames = 1000;
   runner.collectWinData(oneDie, [strategy], states, probs, numGames);
 
   let winRate = 0.0;
   for (const s of states) {
-    if (s.isEnded() && s.winner === 0) {
+    if (s.isEnded() && s.hasWinner()) {
       winRate += 1 / numGames;
     }
   }

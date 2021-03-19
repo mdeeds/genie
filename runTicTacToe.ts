@@ -46,12 +46,14 @@ export class RunTicTacToe {
     const s = new RandomStrategy(g);
     const runner = new RunGame();
     const exampleStates: State[] = [];
-    const exampleWinProbs: number[][] = [];
-    const numGames = 1000;
-    runner.collectWinData(g, [s, s], exampleStates, exampleWinProbs, numGames);
+    const exampleWinProbs: Float32Array[] = [];
+
+    runner.collectExhaustiveWinData(g, exampleStates, exampleWinProbs);
     console.assert(exampleStates.length === exampleWinProbs.length);
     console.assert(exampleWinProbs[0].length === g.getPlayerCount(),
       `Prob count: ${exampleWinProbs[0].length}`);
+
+    console.log(`Training data size: ${exampleWinProbs.length}`);
 
     RunTicTacToe.bigMessage("Training Data");
     for (let i = 0; i < 10; ++i) {
@@ -65,28 +67,42 @@ export class RunTicTacToe {
       `O win: ${prob[1].toFixed(3)}; `);
     }
 
+    const baseDataSize = exampleStates.length;
+
     const e1 = await ModelEstimator.make(g);
-    const p1 = new WinEstimatorStrategy(g, e1);
+    const p1 = new WinEstimatorStrategy(g, e1, /*moveNoise=*/0.0);
 
-    for (let loop = 0; loop < 50; ++loop) {
-      console.log("Training P1");
-      await e1.train(exampleStates, exampleWinProbs);
-      console.log("Done training.");
+    for (let i = 0; i < 10; ++i) {
+      console.log(`Iteration ${i}`);
+      const history = await e1.train(exampleStates, exampleWinProbs);
+      console.log(`Loss: ${history.history.loss}`);
 
-      exampleWinProbs.splice(0, exampleWinProbs.length);
-      exampleStates.splice(0, exampleStates.length);
-      runner.collectWinData(g, [p1, p1], exampleStates, exampleWinProbs, 300);
+      const trainedStates: State[] = [];
+      const trainedWinProbs: Float32Array[] = [];
+      runner.collectWinData(g, [p1, p1], trainedStates, trainedWinProbs, 1);
 
-      RunTicTacToe.bigMessage(`Game Results ${loop + 1}`);
-      for (let i = 0; i < 20; ++i) {
-        const state = exampleStates[i];
-        const prob: number[][] = e1.probabilityOfWin([state]);
+      RunTicTacToe.bigMessage(`Game Results: Iteration ${i}`);
+      for (let i = 0; i < trainedStates.length; ++i) {
+        const state = trainedStates[i];
+        const prob: Float32Array[] = e1.probabilityOfWin([state]);
         RunTicTacToe.visualizeState(
-          state, `Win: ${exampleWinProbs[i]}; ` +
+          state,
           `to play: ${state.playerIndex}; ` +
           `X win: ${prob[0][0].toFixed(3)}; ` +
-        `O win: ${prob[0][1].toFixed(3)}; `);
+          `O win: ${prob[0][1].toFixed(3)}; `);
       }
+
+      const keepPortion = Math.round(baseDataSize / (i + 1));
+      exampleStates.splice(keepPortion);
+      exampleWinProbs.splice(keepPortion);
+      const dataCollectionStrategy =
+        new WinEstimatorStrategy(g, e1, /*moveNoise=*/0.1);
+      runner.collectWinData(g,
+        [dataCollectionStrategy, dataCollectionStrategy],
+        exampleStates, exampleWinProbs, 100);
+      console.log(`Sample size: ${exampleStates.length}`);
     }
+
+    console.log("Done.");
   }
 }

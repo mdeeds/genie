@@ -1,5 +1,3 @@
-"use strict";
+import { Table } from "./table";
 
-import { RunTicTacToe } from "./runTicTacToe";
-
-RunTicTacToe.run();
+const table = new Table();

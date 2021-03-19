@@ -24,21 +24,23 @@ export class ModelEstimator implements Estimator {
       tf.setBackend('cpu').then(() => {
         const input = tf.input({ shape: [game.getStateSize()] });
 
-        const l1 = tf.layers.dense({ units: 18 }).apply(input);
-        const l2 = tf.layers.dense({ units: 3 }).apply(l1);
+        const l1 = tf.layers.dense({ units: 64 }).apply(input);
+        const l2 = tf.layers.dense({ units: 64 }).apply(l1);
+        const l3 = tf.layers.dense({ units: 64 }).apply(l2);
         const o = tf.layers.dense(
-          { units: game.getPlayerCount(), activation: 'hardSigmoid' })
-          .apply(l2) as tf.SymbolicTensor;
+          { units: game.getPlayerCount(), activation: 'softmax' })
+          .apply(l3) as tf.SymbolicTensor;
 
         result.model = tf.model({ inputs: input, outputs: o });
         result.model.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
         console.log("Compiled.");
+        result.model.summary();
         resolve(result);
       });
     });
   }
 
-  probabilityOfWin(states: State[]): number[][] {
+  probabilityOfWin(states: State[]): Float32Array[] {
     const stateData: Float32Array[] = [];
     for (const s of states) {
       stateData.push(s.data);
@@ -50,11 +52,11 @@ export class ModelEstimator implements Estimator {
     const probTensor = this.model.predict(inputTensor) as tf.Tensor;
     const probData = probTensor.dataSync();
 
-    const result: number[][] = [];
+    const result: Float32Array[] = [];
     for (let i = 0; i < states.length; ++i) {
-      result.push([]);
+      result.push(new Float32Array(this.game.getPlayerCount()));
       for (let j = 0; j < this.game.getPlayerCount(); ++j) {
-        result[i].push(probData[j + i * this.game.getPlayerCount()]);
+        result[i][j] = probData[j + i * this.game.getPlayerCount()];
       }
     }
 
@@ -63,12 +65,12 @@ export class ModelEstimator implements Estimator {
     return result;
   }
 
-  train(states: State[], winProbabilities: number[][]): Promise<tf.History> {
+  train(states: State[], winProbabilities: Float32Array[]): Promise<tf.History> {
     const x = tf.tensor(State.toDataArray(states),
       [states.length, this.stateSize]);
     const y = tf.tensor(winProbabilities,
       [winProbabilities.length, this.game.getPlayerCount()],
       'float32');
-    return this.model.fit(x, y, { epochs: 100 });
+    return this.model.fit(x, y, { epochs: 10, shuffle: true });
   }
 }
