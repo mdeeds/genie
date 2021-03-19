@@ -1,8 +1,35 @@
+
+class Token {
+  label: string;
+  element: HTMLSpanElement;
+  magnet: Magnet = null;
+  constructor(label: string, element: HTMLSpanElement) {
+    this.label = label;
+    this.element = element;
+  }
+}
+
+class Magnet {
+  element: HTMLSpanElement;
+  token: Token = null;
+  constructor(element: HTMLSpanElement) {
+    this.element = element;
+  }
+}
+
 export class Table {
   private container: HTMLDivElement;
-  private magnets: Set<HTMLSpanElement>;
+
+  // Ordered list of magnets.  The order in this list
+  // corresponds to the order in the state vector.
+  private magnets: Magnet[];
+
+  // Maps token label to an index.  This is used to generate a State
+  // object from the magnets.
+  private tokenIndex: Map<string, number>;
   constructor() {
-    this.magnets = new Set<HTMLSpanElement>();
+    this.magnets = [];
+    this.tokenIndex = new Map<string, number>();
 
     const body = document.getElementsByTagName('body')[0];
 
@@ -20,32 +47,42 @@ export class Table {
         this.addMagnet(i * 50 + 300, j * 50 + 100);
       }
     }
+
+    const display = document.createElement('div');
+    display.classList.add('display');
+    body.appendChild(display);
+    display.innerText = "** D I S P L A Y **";
+    this.updateLoop(display);
   }
 
-  addToken(label: string, x: number, y: number) {
+  private updateLoop(display: HTMLDivElement) {
+    display.innerText = `${this.getStateData()}`;
+
+    setTimeout(() => { this.updateLoop(display); }, 100);
+  }
+
+  private addToken(label: string, x: number, y: number) {
+    if (!this.tokenIndex.has(label)) {
+      this.tokenIndex.set(label, this.tokenIndex.size);
+    }
     const token = document.createElement('span');
     token.innerText = label;
     token.classList.add('token');
     token.style.left = `${x}px`;
     token.style.top = `${y}px`;
+    const t = new Token(label, token);
     token.addEventListener('mousedown', (me) => {
-      this.handleMouseEvent(token, me);
+      this.handleMouseEvent(t, me);
     });
     token.addEventListener('mousemove', (me) => {
-      this.handleMouseEvent(token, me);
+      this.handleMouseEvent(t, me);
     });
     token.addEventListener('mouseout', (me) => {
-      this.handleMouseEvent(token, me);
+      this.handleMouseEvent(t, me);
     });
     token.addEventListener('mouseup', (me) => {
-      this.handleMouseEvent(token, me);
+      this.handleMouseEvent(t, me);
     });
-    // this.container.addEventListener('mousemove',
-    //   (me) => {
-    //     if (this.dragging) {
-    //       this.handleMouseEvent(this.dragging, me);
-    //     }
-    //   })
     this.container.appendChild(token);
   }
 
@@ -55,7 +92,8 @@ export class Table {
     magnet.style.left = `${x}px`;
     magnet.style.top = `${y}px`;
     this.container.appendChild(magnet);
-    this.magnets.add(magnet);
+    const m = new Magnet(magnet);
+    this.magnets.push(m);
   }
 
   private intersects(a: DOMRect, b: DOMRect) {
@@ -69,8 +107,8 @@ export class Table {
 
   private moveToXY(token: HTMLSpanElement, x: number, y: number) {
     const tokenBB = token.getBoundingClientRect();
-    token.style.left = `${x - tokenBB.width / 2 - this.container.offsetLeft}px`;
-    token.style.top = `${y - tokenBB.height / 2 - this.container.offsetTop}px`;
+    token.style.left = `${x - tokenBB.width / 2}px`;
+    token.style.top = `${y - tokenBB.height / 2}px`;
   }
 
   private moveToCenter(token: HTMLSpanElement, location: DOMRect) {
@@ -79,19 +117,21 @@ export class Table {
     this.moveToXY(token, x, y);
   }
 
-  private checkMagnets(token: HTMLSpanElement) {
-    const tokenBB = token.getBoundingClientRect();
+  private checkMagnets(token: Token) {
+    const tokenBB = token.element.getBoundingClientRect();
     for (const m of this.magnets) {
-      const magnetBB = m.getBoundingClientRect();
+      const magnetBB = m.element.getBoundingClientRect();
       if (this.intersects(magnetBB, tokenBB)) {
-        this.moveToCenter(token, magnetBB);
+        this.moveToCenter(token.element, magnetBB);
+        m.token = token;
+        token.magnet = m;
         break;
       }
     }
   }
 
   private dragging: HTMLSpanElement;
-  handleMouseEvent(token: HTMLSpanElement, ev: MouseEvent) {
+  private handleMouseEvent(token: Token, ev: MouseEvent) {
     ev.preventDefault();
     switch (ev.type) {
       case 'mousemove':
@@ -103,6 +143,8 @@ export class Table {
       case 'mousedown':
         this.dragging = ev.target as HTMLSpanElement;
         this.dragging.classList.add('dragging');
+        token.magnet.token = null;
+        token.magnet = null;
         break;
       case 'mouseup':
         this.checkMagnets(token);
@@ -110,7 +152,25 @@ export class Table {
         this.dragging = null;
         return;
     }
-    this.moveToXY(token, ev.clientX, ev.clientY);
+    this.moveToXY(token.element,
+      ev.clientX,
+      ev.clientY);
+  }
+
+  getStateData(): Float32Array {
+    const numTokens = this.tokenIndex.size;
+    const numMagnets = this.magnets.length;
+
+    const result = new Float32Array(numTokens * numMagnets);
+
+    for (let i = 0; i < this.magnets.length; ++i) {
+      const m = this.magnets[i];
+      if (m.token !== null) {
+        const tokenIndex = this.tokenIndex.get(m.token.label);
+        result[i + tokenIndex * numMagnets] = 1.0;
+      }
+    }
+    return result;
   }
 
 }
