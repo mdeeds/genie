@@ -60,5 +60,6 @@
   height: 10px;
   background: linear-gradient(0.25turn, #f00, #f00, #00f, #00f);
   z-index: 1;
+  box-shadow: #ff0a 0px 0px 5px;
 }
 
