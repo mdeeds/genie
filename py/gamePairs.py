@@ -8,8 +8,8 @@ class GamePair:
     losses = 0
 
     def __init__(self, state, move, isWin):
-        self.state = state
-        self.move = move
+        self.state = np.array(state)
+        self.move = np.array(move)
         if isWin:
             self.wins = 1
         else:
@@ -61,7 +61,6 @@ class GamePairs:
         return average
 
     def append(self, state, move, isWin):
-
         key = hash(state, move)
         if key in self.pairs:
             if isWin:
