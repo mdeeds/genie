@@ -53,6 +53,54 @@ export class Table {
     this.updateDisplay();
   }
 
+  getStateSize(): number {
+    return this.magnets.length;
+  }
+
+  // Sets the current board position to match `data`.
+  // The length of data must be equal to the number of magnets.
+  setStateData(data: Float32Array) {
+    // TODO
+  }
+
+  getStateData(): Float32Array {
+    const numTokens = this.tokenIndex.size;
+    const numMagnets = this.magnets.length;
+
+    const result = new Float32Array(numTokens * numMagnets);
+
+    for (let i = 0; i < this.magnets.length; ++i) {
+      const m = this.magnets[i];
+      if (m.token !== null) {
+        const tokenIndex = this.tokenIndex.get(m.token.label);
+        result[i + tokenIndex * numMagnets] = 1.0;
+      }
+    }
+    return result;
+  }
+
+  getMoveSize(): number {
+    const sourcePositions = this.magnets.length + this.tokenIndex.size;
+    const destinationPositions = this.magnets.length;
+
+    return sourcePositions * destinationPositions;
+  }
+
+  // Highlights the move from `sourceIndex` to `destinationIndex`.
+  highlightMoveSD(sourceIndex: number, destinationIndex: number) {
+    // TODO
+  }
+
+  // Highlights the most prominant move specified in the input
+  // vector.
+  // If `s` is the source index, and `d` is the destination index,
+  // and `m` is the number of possible destinations, then 
+  // the cell at s * m + d corresponds to the source-destination pair
+  // s->d
+  highlightMove(data: Float32Array) {
+    // TODO (do some magic, then call highlightMoveSD)
+  }
+
   private updateDisplay() {
     this.display.innerText = `${this.getStateData()}`;
   }
@@ -100,7 +148,7 @@ export class Table {
     return t;
   }
 
-  addMagnet(x: number, y: number) {
+  private addMagnet(x: number, y: number) {
     const magnet = document.createElement('span');
     magnet.classList.add('magnet');
     magnet.style.left = `${x}px`;
@@ -172,21 +220,4 @@ export class Table {
     }
     this.moveToXY(token.element, ev.clientX, ev.clientY);
   }
-
-  getStateData(): Float32Array {
-    const numTokens = this.tokenIndex.size;
-    const numMagnets = this.magnets.length;
-
-    const result = new Float32Array(numTokens * numMagnets);
-
-    for (let i = 0; i < this.magnets.length; ++i) {
-      const m = this.magnets[i];
-      if (m.token !== null) {
-        const tokenIndex = this.tokenIndex.get(m.token.label);
-        result[i + tokenIndex * numMagnets] = 1.0;
-      }
-    }
-    return result;
-  }
-
 }
