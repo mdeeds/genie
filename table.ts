@@ -1,3 +1,6 @@
+import { Move } from "./move";
+import { State } from "./state";
+
 class Token {
   label: string;
   element: HTMLSpanElement;
@@ -22,30 +25,51 @@ export class Table {
 
   // Ordered list of magnets.  The order in this list
   // corresponds to the order in the state vector.
-  private magnets: Magnet[];
+  private magnets: Magnet[] = [];
+
+  // Ordered list of players.
+  private players: string[] = [];
+  // Index of current player.  This corresponds to playerIndex in
+  // the State class.
+  private playerIndex: number = 0;
+
+  private playerSpan: HTMLSpanElement;
 
   // Maps token label to an index.  This is used to generate a State
   // object from the magnets.
   private tokenIndex: Map<string, number>;
   constructor() {
-    this.magnets = [];
     this.tokenIndex = new Map<string, number>();
 
     const body = document.getElementsByTagName('body')[0];
 
+    /***** Player indicator *****/
+    this.addPlayer("X");
+    this.addPlayer("O");
+
+    const playerContainer = document.createElement('span');
+    playerContainer.classList.add('player');
+    playerContainer.innerText = 'Your turn: ';
+    body.appendChild(playerContainer);
+
+    this.playerSpan = document.createElement('span');
+    this.playerSpan.innerText = this.players[this.playerIndex];
+    playerContainer.appendChild(this.playerSpan);
+
+    /***** Playing surface *****/
     this.container = document.createElement('div');
     this.container.classList.add('table');
     body.appendChild(this.container);
 
     this.addBag("X", 50, 100);
     this.addBag("O", 50, 200);
-
     for (let i = 0; i < 3; ++i) {
       for (let j = 0; j < 3; ++j) {
         this.addMagnet(i * 50 + 200, j * 50 + 100);
       }
     }
 
+    /***** Debug display *****/
     this.display = document.createElement('div');
     this.display.classList.add('display');
     body.appendChild(this.display);
@@ -57,9 +81,8 @@ export class Table {
     return this.magnets.length;
   }
 
-  // Sets the current board position to match `data`.
-  // The length of data must be equal to the number of magnets.
-  setStateData(data: Float32Array) {
+  // Sets the current board position to match `state`.
+  setState(state: State) {
     // TODO
   }
 
@@ -87,7 +110,7 @@ export class Table {
   }
 
   // Highlights the move from `sourceIndex` to `destinationIndex`.
-  highlightMoveSD(sourceIndex: number, destinationIndex: number) {
+  private highlightMoveSD(sourceIndex: number, destinationIndex: number) {
     // TODO
   }
 
@@ -97,7 +120,7 @@ export class Table {
   // and `m` is the number of possible destinations, then 
   // the cell at s * m + d corresponds to the source-destination pair
   // s->d
-  highlightMove(data: Float32Array) {
+  highlightMove(move: Move) {
     // TODO (do some magic, then call highlightMoveSD)
   }
 
@@ -120,6 +143,10 @@ export class Table {
       const t = this.makeToken(label, x, y);
       this.handleMouseEvent(t, me);
     });
+  }
+
+  private addPlayer(name: string) {
+    this.players.push(name);
   }
 
   private makeToken(label: string, x: number, y: number): Token {
