@@ -120,9 +120,10 @@ export class Table {
   }
 
   private moveToXY(token: HTMLSpanElement, x: number, y: number) {
+    const bb = this.container.getBoundingClientRect();
     const tokenBB = token.getBoundingClientRect();
-    token.style.left = `${x - tokenBB.width / 2}px`;
-    token.style.top = `${y - tokenBB.height / 2}px`;
+    token.style.left = `${x - tokenBB.width / 2 - bb.left}px`;
+    token.style.top = `${y - tokenBB.height / 2 - bb.top}px`;
   }
 
   private moveToCenter(token: HTMLSpanElement, location: DOMRect) {
@@ -169,9 +170,7 @@ export class Table {
         this.dragging = null;
         return;
     }
-    this.moveToXY(token.element,
-      ev.clientX,
-      ev.clientY);
+    this.moveToXY(token.element, ev.clientX, ev.clientY);
   }
 
   getStateData(): Float32Array {
