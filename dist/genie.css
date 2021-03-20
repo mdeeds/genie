@@ -20,6 +20,7 @@
 }
 
 /* ZIndex Class */
+/* 4 move hover */
 /* 3 move */
 /* 2 good bad */
 /* 1 unsorted legal illegal */
@@ -44,8 +45,7 @@
 }
 
 .illegal {
-  background-color: #000;
-  color: white;
+  background-color: #fff;
   z-index: 1;
 }
 
@@ -62,8 +62,8 @@
 .move {
   position: relative;
   border-radius: 2px;
-  width: 10px;
-  height: 10px;
+  width: 14px;
+  height: 14px;
   box-shadow: 5px 5px 10px #0004;
   background-color: #ff0;
   margin: 1px;
@@ -72,8 +72,13 @@
   z-index: 3;
 }
 
+.move.selected {
+  border: 1px solid;
+}
+
 .move:hover {
   transform: scale(2.0);
+  z-index: 4;
 }
 
 /* ZIndex Class */

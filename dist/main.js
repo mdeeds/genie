@@ -8,9 +8,102 @@
 var __webpack_unused_export__;
 
 __webpack_unused_export__ = ({ value: true });
+const moveSorter_1 = __webpack_require__(832);
 const table_1 = __webpack_require__(700);
 const table = new table_1.Table();
+const sorter = new moveSorter_1.MoveSorter();
 //# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 832:
+/***/ ((__unused_webpack_module, exports) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.MoveSorter = void 0;
+class SortArea {
+    constructor(label, type, container) {
+        this.element = document.createElement('div');
+        const labelDiv = document.createElement('div');
+        labelDiv.innerText = label;
+        this.element.appendChild(labelDiv);
+        this.element.classList.add('sortCell');
+        this.element.classList.add(type);
+        this.element.addEventListener('dragover', (ev) => {
+            ev.preventDefault();
+        });
+        this.element.addEventListener('drop', (ev) => {
+            ev.preventDefault();
+            this.add(MoveIcon.moveInMotion);
+        });
+        container.appendChild(this.element);
+    }
+    add(m) {
+        for (const child of this.element.childNodes) {
+            if (child['moveIcon']) {
+                const childM = child['moveIcon'];
+                if (m.getSortScore() < childM.getSortScore()) {
+                    this.element.insertBefore(m.element, childM.element);
+                    return;
+                }
+            }
+        }
+        this.element.appendChild(m.element);
+    }
+}
+class MoveIcon {
+    constructor(score) {
+        this.score = score;
+        this.element = document.createElement('div');
+        this.element.classList.add('move');
+        this.element.draggable = true;
+        this.element.style.filter = `hue-rotate(${score * 0.9 - 0.5}turn)`;
+        this.element.addEventListener('dragstart', (ev) => {
+            this.element.style.opacity = '0.5';
+            MoveIcon.moveInMotion = this;
+        });
+        this.element.addEventListener('dragend', (ev) => {
+            this.element.style.opacity = '';
+        });
+        this.element.addEventListener('mousedown', (ev) => {
+            for (const selected of document.getElementsByClassName('selected')) {
+                selected.classList.remove('selected');
+            }
+            this.element.classList.add('selected');
+        });
+        this.element['moveIcon'] = this;
+    }
+    getSortScore() {
+        return Math.abs(this.score - 0.5);
+    }
+}
+MoveIcon.moveInMotion = null;
+class MoveSorter {
+    // private goodMoves: SortArea;
+    // private badMoves: SortArea;
+    constructor() {
+        const body = document.getElementsByTagName('body')[0];
+        const container = document.createElement('div');
+        container.classList.add('sortArea');
+        body.appendChild(container);
+        this.unsortedMoves = new SortArea('unsorted', 'unsorted', container);
+        this.legalMoves = new SortArea('legal', 'legal', container);
+        this.illegalMoves = new SortArea('illegal', 'illegal', container);
+        // this.goodMoves = new SortArea('good', 'good', this.legalMoves.element);
+        // this.badMoves = new SortArea('bad', 'bad', this.legalMoves.element);
+        for (let i = 0; i < 10; ++i) {
+            const m = new MoveIcon(Math.random());
+            this.unsortedMoves.add(m);
+        }
+        this.legalMoves.add(new MoveIcon(Math.random()));
+        this.illegalMoves.add(new MoveIcon(Math.random()));
+        // const m3 = new MoveIcon(this.goodMoves.element, Math.random());
+        // const m4 = new MoveIcon(this.badMoves.element, Math.random());
+    }
+}
+exports.MoveSorter = MoveSorter;
+//# sourceMappingURL=moveSorter.js.map
 
 /***/ }),
 
@@ -48,15 +141,14 @@ class Table {
                 this.addMagnet(i * 50 + 200, j * 50 + 100);
             }
         }
-        const display = document.createElement('div');
-        display.classList.add('display');
-        body.appendChild(display);
-        display.innerText = "** D I S P L A Y **";
-        this.updateLoop(display);
+        this.display = document.createElement('div');
+        this.display.classList.add('display');
+        body.appendChild(this.display);
+        this.display.innerText = "** D I S P L A Y **";
+        this.updateDisplay();
     }
-    updateLoop(display) {
-        display.innerText = `${this.getStateData()}`;
-        setTimeout(() => { this.updateLoop(display); }, 100);
+    updateDisplay() {
+        this.display.innerText = `${this.getStateData()}`;
     }
     addBag(label, x, y) {
         if (!this.tokenIndex.has(label)) {
@@ -117,9 +209,10 @@ class Table {
         }
     }
     moveToXY(token, x, y) {
+        const bb = this.container.getBoundingClientRect();
         const tokenBB = token.getBoundingClientRect();
-        token.style.left = `${x - tokenBB.width / 2}px`;
-        token.style.top = `${y - tokenBB.height / 2}px`;
+        token.style.left = `${x - tokenBB.width / 2 - bb.left}px`;
+        token.style.top = `${y - tokenBB.height / 2 - bb.top}px`;
     }
     moveToCenter(token, location) {
         const x = (location.left + location.right) / 2;
@@ -137,6 +230,7 @@ class Table {
                 break;
             }
         }
+        this.updateDisplay();
     }
     handleMouseEvent(token, ev) {
         ev.preventDefault();

@@ -48,6 +48,12 @@ class MoveIcon {
     this.element.addEventListener('dragend', (ev) => {
       this.element.style.opacity = '';
     });
+    this.element.addEventListener('mousedown', (ev) => {
+      for (const selected of document.getElementsByClassName('selected')) {
+        selected.classList.remove('selected');
+      }
+      this.element.classList.add('selected');
+    });
     this.element['moveIcon'] = this;
   }
   getSortScore() {
