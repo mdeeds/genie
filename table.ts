@@ -56,6 +56,11 @@ export class Table {
     this.playerSpan.innerText = this.players[this.playerIndex];
     playerContainer.appendChild(this.playerSpan);
 
+    const doneButton = document.createElement('span');
+    doneButton.classList.add('button');
+    doneButton.innerText = 'Done';
+    playerContainer.appendChild(doneButton);
+
     /***** Playing surface *****/
     this.container = document.createElement('div');
     this.container.classList.add('table');

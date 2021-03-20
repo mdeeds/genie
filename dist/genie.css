@@ -81,12 +81,25 @@
   z-index: 4;
 }
 
+.button {
+  font-size: 20px;
+  border: 3px outset #66d;
+  border-radius: 5px;
+  padding: 5px;
+  margin: 8px;
+  background-color: #88f;
+}
+
+.button:active {
+  border-style: inset;
+}
+
 /* ZIndex Player */
 /* 1 player */
 
 .player {
   position: relative;
-  background-color: #ddd;
+  background-color: #eee;
   font-family: Verdana, Geneva, Tahoma, sans-serif;
   font-size: 30px;
   z-index: 1;
