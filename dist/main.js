@@ -128,9 +128,27 @@ class Magnet {
 }
 class Table {
     constructor() {
+        // Ordered list of magnets.  The order in this list
+        // corresponds to the order in the state vector.
         this.magnets = [];
+        // Ordered list of players.
+        this.players = [];
+        // Index of current player.  This corresponds to playerIndex in
+        // the State class.
+        this.playerIndex = 0;
         this.tokenIndex = new Map();
         const body = document.getElementsByTagName('body')[0];
+        /***** Player indicator *****/
+        this.addPlayer("X");
+        this.addPlayer("O");
+        const playerContainer = document.createElement('span');
+        playerContainer.classList.add('player');
+        playerContainer.innerText = 'Your turn: ';
+        body.appendChild(playerContainer);
+        this.playerSpan = document.createElement('span');
+        this.playerSpan.innerText = this.players[this.playerIndex];
+        playerContainer.appendChild(this.playerSpan);
+        /***** Playing surface *****/
         this.container = document.createElement('div');
         this.container.classList.add('table');
         body.appendChild(this.container);
@@ -141,11 +159,50 @@ class Table {
                 this.addMagnet(i * 50 + 200, j * 50 + 100);
             }
         }
+        /***** Debug display *****/
         this.display = document.createElement('div');
         this.display.classList.add('display');
         body.appendChild(this.display);
         this.display.innerText = "** D I S P L A Y **";
         this.updateDisplay();
+    }
+    getStateSize() {
+        return this.magnets.length;
+    }
+    // Sets the current board position to match `state`.
+    setState(state) {
+        // TODO
+    }
+    getStateData() {
+        const numTokens = this.tokenIndex.size;
+        const numMagnets = this.magnets.length;
+        const result = new Float32Array(numTokens * numMagnets);
+        for (let i = 0; i < this.magnets.length; ++i) {
+            const m = this.magnets[i];
+            if (m.token !== null) {
+                const tokenIndex = this.tokenIndex.get(m.token.label);
+                result[i + tokenIndex * numMagnets] = 1.0;
+            }
+        }
+        return result;
+    }
+    getMoveSize() {
+        const sourcePositions = this.magnets.length + this.tokenIndex.size;
+        const destinationPositions = this.magnets.length;
+        return sourcePositions * destinationPositions;
+    }
+    // Highlights the move from `sourceIndex` to `destinationIndex`.
+    highlightMoveSD(sourceIndex, destinationIndex) {
+        // TODO
+    }
+    // Highlights the most prominant move specified in the input
+    // vector.
+    // If `s` is the source index, and `d` is the destination index,
+    // and `m` is the number of possible destinations, then 
+    // the cell at s * m + d corresponds to the source-destination pair
+    // s->d
+    highlightMove(move) {
+        // TODO (do some magic, then call highlightMoveSD)
     }
     updateDisplay() {
         this.display.innerText = `${this.getStateData()}`;
@@ -164,6 +221,9 @@ class Table {
             const t = this.makeToken(label, x, y);
             this.handleMouseEvent(t, me);
         });
+    }
+    addPlayer(name) {
+        this.players.push(name);
     }
     makeToken(label, x, y) {
         if (!this.tokenIndex.has(label)) {
@@ -256,19 +316,6 @@ class Table {
                 return;
         }
         this.moveToXY(token.element, ev.clientX, ev.clientY);
-    }
-    getStateData() {
-        const numTokens = this.tokenIndex.size;
-        const numMagnets = this.magnets.length;
-        const result = new Float32Array(numTokens * numMagnets);
-        for (let i = 0; i < this.magnets.length; ++i) {
-            const m = this.magnets[i];
-            if (m.token !== null) {
-                const tokenIndex = this.tokenIndex.get(m.token.label);
-                result[i + tokenIndex * numMagnets] = 1.0;
-            }
-        }
-        return result;
     }
 }
 exports.Table = Table;
