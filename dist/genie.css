@@ -1,5 +1,3 @@
-
-
 .state {
   font-family: 'Courier New', Courier, monospace;
   border-radius: 3px;
@@ -13,6 +11,76 @@
   font-size: 22px;
 }
 
+.sortArea {
+  position: absolute;
+  left: 1050px;
+  top: 0px;
+  height: 816px;
+  width: 100px;
+}
+
+/* ZIndex Class */
+/* 4 move hover */
+/* 3 move */
+/* 2 good bad */
+/* 1 unsorted legal illegal */
+/* 0 sortCell */
+
+.sortCell {
+  margin: 5px;
+  padding: 5px;
+  border-radius: 5px;
+  box-shadow: 5px 5px 10px #0004;
+  z-index: 0;
+}
+
+.unsorted {
+  background-color: #aaa;
+  z-index: 1;
+}
+
+.legal {
+  background-color: #fff;
+  z-index: 1;
+}
+
+.illegal {
+  background-color: #fff;
+  z-index: 1;
+}
+
+.good {
+  background-color: #f4d;
+  z-index: 2;
+}
+
+.bad {
+  background-color: #d30;
+  z-index: 2;
+}
+
+.move {
+  position: relative;
+  border-radius: 2px;
+  width: 14px;
+  height: 14px;
+  box-shadow: 5px 5px 10px #0004;
+  background-color: #ff0;
+  margin: 1px;
+  display: inline-block;
+  cursor: move;
+  z-index: 3;
+}
+
+.move.selected {
+  border: 1px solid;
+}
+
+.move:hover {
+  transform: scale(2.0);
+  z-index: 4;
+}
+
 /* ZIndex Class */
 /* 3 token hover */
 /* 2 token */
@@ -21,6 +89,7 @@
 
 
 .table {
+  position: relative;
   border-radius: 5px;
   background-color: #afa;
   box-shadow: 5px 5px 10px #0004;
@@ -88,7 +157,6 @@
   border-bottom: 0px solid black;
   padding: 6px;
   box-shadow: 3px 3px 6px #0004;
-  background: linear-gradient(0.25turn, #111, #000, #111, #555);
+  background: linear-gradient(0.27turn, #555, #222, #000, #222);
   color: #fff
 }
-
