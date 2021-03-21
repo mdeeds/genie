@@ -1,6 +1,3 @@
-import { Move } from "./move";
-import { State } from "./state";
-
 class Token {
   label: string;
   element: HTMLSpanElement;
@@ -102,11 +99,6 @@ export class Table {
     this.updateDisplay();
   }
 
-  // Sets the current board position to match `state`.
-  setState(state: State) {
-    // TODO
-  }
-
   getStateData(): Float32Array {
     const numTokens = this.tokenIndex.size;
     const numMagnets = this.magnets.length;
@@ -137,16 +129,6 @@ export class Table {
   // Highlights the move from `sourceIndex` to `destinationIndex`.
   private highlightMoveSD(sourceIndex: number, destinationIndex: number) {
     // TODO
-  }
-
-  // Highlights the most prominant move specified in the input
-  // vector.
-  // If `s` is the source index, and `d` is the destination index,
-  // and `m` is the number of possible destinations, then 
-  // the cell at s * m + d corresponds to the source-destination pair
-  // s->d
-  highlightMove(move: Move) {
-    // TODO (do some magic, then call highlightMoveSD)
   }
 
   private updateDisplay() {
