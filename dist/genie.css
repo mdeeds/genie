@@ -109,6 +109,7 @@
 }
 
 /* ZIndex Class */
+/* 4 indicator labels */
 /* 3 token hover */
 /* 2 token */
 /* 1 magnet */
@@ -185,4 +186,9 @@
   box-shadow: 3px 3px 6px #0004;
   background: linear-gradient(0.27turn, #555, #222, #000, #222);
   color: #fff
+}
+
+.labelIndicator {
+  position: absolute;
+  text-shadow: 3px 3px 6px #0004;
 }

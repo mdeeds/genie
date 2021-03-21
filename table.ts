@@ -23,10 +23,21 @@ class LabelIndicator {
   labels: string[];
   element: HTMLSpanElement;
   index: number;
-  constructor(element: HTMLSpanElement, labels: string[]) {
-    this.element = element;
+  constructor(container: HTMLDivElement,
+    labels: string[], x: number, y: number) {
+    this.element = document.createElement('span');
+    this.element.classList.add('labelIndicator');
+    this.element.style.left = `${x}px`;
+    this.element.style.top = `${y}px`;
+    container.appendChild(this.element);
+
     this.labels = labels;
-    this.index = 0;
+    this.setIndex(0);
+  }
+
+  setIndex(index: number) {
+    this.index = index;
+    this.element.innerText = this.labels[index];
   }
 }
 
@@ -88,7 +99,7 @@ export class Table {
         this.addMagnet(i * 50 + 200, j * 50 + 100);
       }
     }
-    this.addLabelIndicator(["Game in progress", "X won", "O won", "Cats Game"], 300, 300);
+    this.addLabelIndicator(["Game in progress", "X won", "O won", "Cats Game"], 300, 0);
 
     /***** Debug display *****/
     this.display = document.createElement('div');
@@ -168,13 +179,7 @@ export class Table {
   }
 
   private addLabelIndicator(labels: string[], x: number, y: number) {
-    const elt = document.createElement('span');
-    elt.classList.add('LabelIndicator');
-    elt.style.left = `${x}px`;
-    elt.style.top = `${y}px`;
-    elt.innerText = labels[0];
-    this.container.appendChild(elt);
-    const i = new LabelIndicator(elt, labels);
+    const i = new LabelIndicator(this.container, labels, x, y);
     this.indicators.push(i);
   }
 
