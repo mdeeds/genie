@@ -114,9 +114,9 @@
 
 /* ZIndex Class */
 /* 5 indicator labels */
-/* 4 to/from indicator */
-/* 3 token hover */
-/* 2 token */
+/* 4 token hover */
+/* 3 token */
+/* 2 to/from indicator */
 /* 1 magnet */
 /* 0 table */
 
@@ -157,12 +157,12 @@
   box-shadow: 3px 3px 6px #0004;
   background-color: #ddd;
   padding: 2px;
-  z-index: 2;
+  z-index: 3;
 }
 
 .token:hover {
   transform: scale(1.1);
-  z-index: 3;
+  z-index: 4;
 }
 
 .token.dragging {
@@ -190,7 +190,8 @@
   padding: 6px;
   box-shadow: 3px 3px 6px #0004;
   background: linear-gradient(0.27turn, #555, #222, #000, #222);
-  color: #fff
+  color: #fff;
+  z-index: 1;
 }
 
 .labelIndicator {
@@ -203,11 +204,11 @@
   position: absolute;;
   text-shadow: 0px 0px 10px #ff4;
   width: 50px;
-  height: 80px;
+  height: 82px;
   padding: 0px;
-  border: 1px solid red;
+  text-align: center;
 
-  z-index: 4;
+  z-index: 2;
   font-size: 50px;
   color: #fff;
 
@@ -223,5 +224,36 @@
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+.to {
+  position: absolute;;
+  text-shadow: 0px 0px 10px #00f;
+  width: 50px;
+  height: 70px;
+  padding: 0px;
+  text-align: center;
+
+  z-index: 2;
+  font-size: 50px;
+  color: #fff;
+
+  animation-name: pulse;
+  animation-duration: 4s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out; 
+}
+
+
+@keyframes pulse {
+  0% {
+      transform: scale(1.0);
+  }
+  50% {
+    transform: scale(1.6);
+  }
+  100% {
+    transform: scale(1.0);
   }
 }
