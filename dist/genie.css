@@ -113,7 +113,8 @@
 }
 
 /* ZIndex Class */
-/* 4 indicator labels */
+/* 5 indicator labels */
+/* 4 to/from indicator */
 /* 3 token hover */
 /* 2 token */
 /* 1 magnet */
@@ -195,4 +196,32 @@
 .labelIndicator {
   position: absolute;
   text-shadow: 3px 3px 6px #0004;
+  z-index: 5;
+}
+
+.from {
+  position: absolute;;
+  text-shadow: 0px 0px 10px #ff4;
+  width: 50px;
+  height: 80px;
+  padding: 0px;
+  border: 1px solid red;
+
+  z-index: 4;
+  font-size: 50px;
+  color: #fff;
+
+  animation-name: spin;
+  animation-duration: 4s;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear; 
+}
+
+@keyframes spin {
+  from {
+      transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
