@@ -105,6 +105,12 @@ export class Table {
     this.updateDisplay();
 
     this.initializeModels();
+
+    const star = document.createElement('span');
+    star.innerHTML = "&#x2606;";
+    star.classList.add('from');
+    this.moveToCenter(star, this.magnets[0].element.getBoundingClientRect());
+    this.container.appendChild(star);
   }
 
   async initializeModels() {
