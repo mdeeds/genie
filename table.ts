@@ -1,3 +1,5 @@
+import { LegalSourceModel } from "./legalSourceModel";
+
 class Token {
   label: string;
   element: HTMLSpanElement;
@@ -47,6 +49,8 @@ class LabelIndicator {
 }
 
 export class Table {
+  private legalSourceModel: LegalSourceModel;
+
   private container: HTMLDivElement;
   private display: HTMLDivElement;
 
@@ -97,6 +101,14 @@ export class Table {
     body.appendChild(this.display);
     this.display.innerText = "** D I S P L A Y **";
     this.updateDisplay();
+
+    this.initializeModels();
+  }
+
+  async initializeModels() {
+    const sampleData = this.getStateData();
+    this.legalSourceModel = await LegalSourceModel.make(
+      sampleData.length, this.magnets.length + this.tokenIndex.size);
   }
 
   getStateData(): Float32Array {
@@ -132,7 +144,14 @@ export class Table {
   }
 
   private updateDisplay() {
-    this.display.innerText = `${this.getStateData()}`;
+    const state = this.getStateData();
+    this.display.innerText = `${state}`;
+    if (this.legalSourceModel) {
+      this.legalSourceModel.getLegalSources(state).then((sources) => {
+        this.display.innerText = this.display.innerText + "\n"
+          + sources;
+      })
+    }
   }
 
   private addBag(label: string, x: number, y: number) {
