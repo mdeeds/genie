@@ -1,4 +1,4 @@
-import { LegalSourceModel } from "./legalSourceModel";
+import { LegalLocationModel } from "./legalLocationModel";
 
 class Token {
   label: string;
@@ -49,7 +49,8 @@ class LabelIndicator {
 }
 
 export class Table {
-  private legalSourceModel: LegalSourceModel;
+  private legalSourceModel: LegalLocationModel;
+  private legalDestinationModel: LegalLocationModel;
 
   private container: HTMLDivElement;
   private display: HTMLDivElement;
@@ -105,17 +106,14 @@ export class Table {
     this.updateDisplay();
 
     this.initializeModels();
-
-    const star = document.createElement('span');
-    star.innerHTML = "&#x2606;";
-    star.classList.add('from');
-    this.moveToCenter(star, this.magnets[0].element.getBoundingClientRect());
-    this.container.appendChild(star);
   }
 
   async initializeModels() {
     const sampleData = this.getStateData();
-    this.legalSourceModel = await LegalSourceModel.make(
+    this.legalSourceModel = await LegalLocationModel.make(
+      sampleData.length, this.magnets.length + this.tokenIndex.size);
+
+    this.legalDestinationModel = await LegalLocationModel.make(
       sampleData.length, this.magnets.length + this.tokenIndex.size);
   }
 
@@ -155,7 +153,7 @@ export class Table {
     const state = this.getStateData();
     this.display.innerText = `${state}`;
     if (this.legalSourceModel) {
-      this.legalSourceModel.getLegalSources(state).then((sources) => {
+      this.legalSourceModel.getLegalLocations(state).then((sources) => {
         this.highlightSources(sources);
         this.display.innerText += "\n"
         sources.forEach(element => {
@@ -164,20 +162,71 @@ export class Table {
 
       })
     }
+    if (this.legalDestinationModel) {
+      this.legalDestinationModel.getLegalLocations(state).then(
+        (destinations) => {
+          this.highlightDestinations(destinations);
+          this.display.innerText += "\n"
+          destinations.forEach(element => {
+            this.display.innerText += element.toFixed(2) + ",";
+          });
+
+        })
+    }
+  }
+
+  private getElementForLocation(location: number) {
+    if (location < this.magnets.length) {
+      return this.magnets[location];
+    } else {
+      // TODO return the bag.
+      return this.magnets[0];
+    }
+  }
+
+  private highlightLocations(locations: Float32Array,
+    highlight: Function, dontHighlight: Function) {
+    const sourcePositions = this.magnets.length + this.tokenIndex.size;
+    for (let i = 0; i < locations.length; ++i) {
+      const elt = this.magnets[i].element;
+      if (locations[i] > 0.5) {
+        highlight(elt);
+      } else {
+        dontHighlight(elt);
+      }
+    }
   }
 
   private highlightSources(sources: Float32Array) {
-    const sourcePositions = this.magnets.length + this.tokenIndex.size;
-    let i = 0;
-    this.magnets.forEach(m => {
-      if (sources[i] > 0.5) {
-        m.element.classList.add('dragging');
-      }
-      else {
-        m.element.classList.remove('dragging');
-      }
-      i++
-    });
+    for (const e of this.container.getElementsByClassName('from')) {
+      // TODO: This isn't working.
+      e.parentElement.removeChild(e);
+    }
+    this.highlightLocations(sources,
+      (elt: HTMLSpanElement) => {
+        const star = document.createElement('span');
+        star.innerHTML = "&#x2606;";
+        star.classList.add('from');
+        this.container.appendChild(star);
+        this.moveToCenter(star, elt.getBoundingClientRect());
+      },
+      (elt) => { })
+  }
+
+  private highlightDestinations(destinations: Float32Array) {
+    for (const e of this.container.getElementsByClassName('to')) {
+      // TODO: This isn't working.
+      e.parentElement.removeChild(e);
+    }
+    this.highlightLocations(destinations,
+      (elt: HTMLSpanElement) => {
+        const star = document.createElement('span');
+        star.innerHTML = "&#x25cb;";
+        star.classList.add('to');
+        this.container.appendChild(star);
+        this.moveToCenter(star, elt.getBoundingClientRect());
+      },
+      (elt) => { })
   }
 
   private addBag(label: string, x: number, y: number) {
