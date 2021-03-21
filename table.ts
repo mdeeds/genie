@@ -156,10 +156,28 @@ export class Table {
     this.display.innerText = `${state}`;
     if (this.legalSourceModel) {
       this.legalSourceModel.getLegalSources(state).then((sources) => {
-        this.display.innerText = this.display.innerText + "\n"
-          + sources;
+        this.highlightSources(sources);
+        this.display.innerText += "\n"
+        sources.forEach(element => {
+          this.display.innerText += element.toFixed(2) + ",";
+        });
+
       })
     }
+  }
+
+  private highlightSources(sources: Float32Array) {
+    const sourcePositions = this.magnets.length + this.tokenIndex.size;
+    let i = 0;
+    this.magnets.forEach(m => {
+      if (sources[i] > 0.5) {
+        m.element.classList.add('dragging');
+      }
+      else {
+        m.element.classList.remove('dragging');
+      }
+      i++
+    });
   }
 
   private addBag(label: string, x: number, y: number) {
