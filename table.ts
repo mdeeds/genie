@@ -19,6 +19,17 @@ class Magnet {
   }
 }
 
+class LabelIndicator {
+  labels: string[];
+  element: HTMLSpanElement;
+  index: number;
+  constructor(element: HTMLSpanElement, labels: string[]) {
+    this.element = element;
+    this.labels = labels;
+    this.index = 0;
+  }
+}
+
 export class Table {
   private container: HTMLDivElement;
   private display: HTMLDivElement;
@@ -26,6 +37,10 @@ export class Table {
   // Ordered list of magnets.  The order in this list
   // corresponds to the order in the state vector.
   private magnets: Magnet[] = [];
+
+  // Indicators store and display information like who's turn it is and if the game is ended.
+  private indicators: LabelIndicator[] = [];
+
 
   // Ordered list of players.
   private players: string[] = [];
@@ -73,6 +88,7 @@ export class Table {
         this.addMagnet(i * 50 + 200, j * 50 + 100);
       }
     }
+    this.addLabelIndicator(["Game in progress", "X won", "O won", "Cats Game"], 300, 300);
 
     /***** Debug display *****/
     this.display = document.createElement('div');
@@ -94,6 +110,7 @@ export class Table {
   getStateData(): Float32Array {
     const numTokens = this.tokenIndex.size;
     const numMagnets = this.magnets.length;
+    const numIndicators = this.indicators.length;
 
     const result = new Float32Array(numTokens * numMagnets);
 
@@ -148,6 +165,17 @@ export class Table {
       const t = this.makeToken(label, x, y);
       this.handleMouseEvent(t, me);
     });
+  }
+
+  private addLabelIndicator(labels: string[], x: number, y: number) {
+    const elt = document.createElement('span');
+    elt.classList.add('LabelIndicator');
+    elt.style.left = `${x}px`;
+    elt.style.top = `${y}px`;
+    elt.innerText = labels[0];
+    this.container.appendChild(elt);
+    const i = new LabelIndicator(elt, labels);
+    this.indicators.push(i);
   }
 
   private addPlayer(name: string) {
