@@ -39,6 +39,10 @@ class LabelIndicator {
     this.index = index;
     this.element.innerText = this.labels[index];
   }
+
+  increment() {
+    this.setIndex((this.index + 1) % this.labels.length)
+  }
 }
 
 export class Table {
@@ -52,15 +56,6 @@ export class Table {
   // Indicators store and display information like who's turn it is and if the game is ended.
   private indicators: LabelIndicator[] = [];
 
-
-  // Ordered list of players.
-  private players: string[] = [];
-  // Index of current player.  This corresponds to playerIndex in
-  // the State class.
-  private playerIndex: number = 0;
-
-  private playerSpan: HTMLSpanElement;
-
   // Maps token label to an index.  This is used to generate a State
   // object from the magnets.
   private tokenIndex: Map<string, number>;
@@ -70,27 +65,20 @@ export class Table {
     const body = document.getElementsByTagName('body')[0];
 
     /***** Player indicator *****/
-    this.addPlayer("X");
-    this.addPlayer("O");
-
-    const playerContainer = document.createElement('span');
-    playerContainer.classList.add('player');
-    playerContainer.innerText = 'Your turn: ';
-    body.appendChild(playerContainer);
-
-    this.playerSpan = document.createElement('span');
-    this.playerSpan.innerText = this.players[this.playerIndex];
-    playerContainer.appendChild(this.playerSpan);
-
     const doneButton = document.createElement('span');
     doneButton.classList.add('button');
-    doneButton.innerText = 'Done';
-    playerContainer.appendChild(doneButton);
+    doneButton.innerText = 'Next player';
+    body.appendChild(doneButton);
 
     /***** Playing surface *****/
     this.container = document.createElement('div');
     this.container.classList.add('table');
     body.appendChild(this.container);
+
+    const playerIndicator =
+      this.addLabelIndicator(this.container, ['X to play', 'O to play'], 0, 0);
+    doneButton.addEventListener('click',
+      (ev) => { playerIndicator.increment(); })
 
     this.addBag("X", 50, 100);
     this.addBag("O", 50, 200);
@@ -99,7 +87,8 @@ export class Table {
         this.addMagnet(i * 50 + 200, j * 50 + 100);
       }
     }
-    this.addLabelIndicator(["Game in progress", "X won", "O won", "Cats Game"], 300, 0);
+    this.addLabelIndicator(this.container,
+      ["Game in progress", "X won", "O won", "Cats Game"], 300, 0);
 
     /***** Debug display *****/
     this.display = document.createElement('div');
@@ -178,13 +167,10 @@ export class Table {
     });
   }
 
-  private addLabelIndicator(labels: string[], x: number, y: number) {
-    const i = new LabelIndicator(this.container, labels, x, y);
+  private addLabelIndicator(container, labels: string[], x: number, y: number) {
+    const i = new LabelIndicator(container, labels, x, y);
     this.indicators.push(i);
-  }
-
-  private addPlayer(name: string) {
-    this.players.push(name);
+    return i;
   }
 
   private makeToken(label: string, x: number, y: number): Token {
