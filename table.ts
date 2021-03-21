@@ -82,8 +82,10 @@ export class Table {
 
     const playerIndicator =
       this.addLabelIndicator(this.container, ['X to play', 'O to play'], 0, 0);
-    doneButton.addEventListener('click',
-      (ev) => { playerIndicator.increment(); })
+    doneButton.addEventListener('click', (ev) => {
+      playerIndicator.increment();
+      this.updateDisplay();
+    })
 
     this.addBag("X", 50, 100);
     this.addBag("O", 50, 200);
