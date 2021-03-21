@@ -43,6 +43,10 @@ class LabelIndicator {
   increment() {
     this.setIndex((this.index + 1) % this.labels.length)
   }
+
+  value() {
+    return this.index;
+  }
 }
 
 export class Table {
@@ -98,10 +102,6 @@ export class Table {
     this.updateDisplay();
   }
 
-  getStateSize(): number {
-    return this.magnets.length;
-  }
-
   // Sets the current board position to match `state`.
   setState(state: State) {
     // TODO
@@ -111,8 +111,7 @@ export class Table {
     const numTokens = this.tokenIndex.size;
     const numMagnets = this.magnets.length;
     const numIndicators = this.indicators.length;
-
-    const result = new Float32Array(numTokens * numMagnets);
+    const result = new Float32Array(numTokens * numMagnets + numIndicators);
 
     for (let i = 0; i < this.magnets.length; ++i) {
       const m = this.magnets[i];
@@ -120,6 +119,10 @@ export class Table {
         const tokenIndex = this.tokenIndex.get(m.token.label);
         result[i + tokenIndex * numMagnets] = 1.0;
       }
+    }
+    for (let i = 0; i < numIndicators; ++i) {
+      const indicator = this.indicators[i];
+      result[i + numTokens * numMagnets] = indicator.value();
     }
     return result;
   }
