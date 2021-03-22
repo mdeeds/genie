@@ -1,2 +1,4 @@
 src/**/*.js
 src/**/*.js.map
+dist/main.js
+dist/main.js.map
