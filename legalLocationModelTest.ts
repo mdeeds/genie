@@ -55,6 +55,8 @@ async function testWeighted() {
 
 // TODO: Add tests for:
 // 1) Use TTT game, train on ~5 examples, validate on ~100 different states.
+//    We don't need 100% accuracy on validation, but the wrong ones need to be
+//    less than ~80% confidence - enough to flag for the user to review.
 // 2) Use TTT game, train on ~10 examples where one is wrong, assert that 
 //    that one wrong example fits worse than the other nine.
 
