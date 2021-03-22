@@ -1,3 +1,4 @@
+import { DocumentUtil } from "./documentUtil";
 import { LegalLocationModel } from "./legalLocationModel";
 
 class Token {
@@ -27,7 +28,7 @@ class Magnet {
     this.highlightElt.classList.add('highlight');
     this.highlightElt.innerHTML = html;
     this.element.parentElement.appendChild(this.highlightElt);
-    Table.moveToCenter(
+    DocumentUtil.moveToCenter(
       this.highlightElt, this.element.getBoundingClientRect());
   }
   highlightCircle() {
@@ -91,7 +92,7 @@ export class Table {
   constructor() {
     this.tokenIndex = new Map<string, number>();
 
-    const body = document.getElementsByTagName('body')[0];
+    const body = DocumentUtil.getBody();
 
     /***** Player indicator *****/
     const doneButton = document.createElement('span');
@@ -316,25 +317,12 @@ export class Table {
     }
   }
 
-  static moveToXY(token: HTMLSpanElement, x: number, y: number) {
-    const bb = token.parentElement.getBoundingClientRect();
-    const tokenBB = token.getBoundingClientRect();
-    token.style.left = `${x - tokenBB.width / 2 - bb.left}px`;
-    token.style.top = `${y - tokenBB.height / 2 - bb.top}px`;
-  }
-
-  static moveToCenter(token: HTMLSpanElement, location: DOMRect) {
-    const x = (location.left + location.right) / 2;
-    const y = (location.top + location.bottom) / 2;
-    Table.moveToXY(token, x, y);
-  }
-
   private checkMagnets(token: Token) {
     const tokenBB = token.element.getBoundingClientRect();
     for (const m of this.magnets) {
       const magnetBB = m.element.getBoundingClientRect();
       if (this.intersects(magnetBB, tokenBB)) {
-        Table.moveToCenter(token.element, magnetBB);
+        DocumentUtil.moveToCenter(token.element, magnetBB);
         m.token = token;
         token.magnet = m;
         break;
@@ -367,7 +355,7 @@ export class Table {
         this.dragging = null;
         return;
     }
-    Table.moveToXY(token.element, ev.clientX, ev.clientY);
+    DocumentUtil.moveToXY(token.element, ev.clientX, ev.clientY);
   }
   private handleMagnetMouseEvent(magnet: Magnet, ev: MouseEvent) {
     ev.preventDefault();
