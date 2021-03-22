@@ -373,11 +373,10 @@ export class Table {
     ev.preventDefault();
     switch (ev.type) {
       case 'click':
-        console.log(span.className)
-        if (span.className == 'magnet') {
+        if (span.classList.contains('magnet')) {
           this.addStar(span);
         }
-        if (span.className == 'from') {
+        if (span.classList.contains('from')) {
           span.remove();
         }
         return;
