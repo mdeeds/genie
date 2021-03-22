@@ -207,13 +207,24 @@ export class Table {
         const star = document.createElement('span');
         star.innerHTML = "&#x2606;";
         star.classList.add('from');
-        star.addEventListener("mouseup", (me) => {
+        star.addEventListener('click', (me) => {
           this.handleSpanMouseEvent(star, me);
         })
         this.container.appendChild(star);
         this.moveToCenter(star, elt.getBoundingClientRect());
       },
       (elt) => { })
+  }
+
+  private addStar(elt: Element) {
+    const star = document.createElement('span');
+    star.innerHTML = "&#x2606;";
+    star.classList.add('from');
+    star.addEventListener('click', (me) => {
+      this.handleSpanMouseEvent(star, me)
+    });
+    this.container.appendChild(star);
+    this.moveToCenter(star, elt.getBoundingClientRect());
   }
 
   // private highlightDestinations(destinations: Float32Array) {
@@ -288,6 +299,9 @@ export class Table {
     magnet.classList.add('magnet');
     magnet.style.left = `${x}px`;
     magnet.style.top = `${y}px`;
+    magnet.addEventListener('click', (me) => {
+      this.handleSpanMouseEvent(magnet, me);
+    });
     this.container.appendChild(magnet);
     const m = new Magnet(magnet);
     this.magnets.push(m);
@@ -358,9 +372,24 @@ export class Table {
   private handleSpanMouseEvent(span: HTMLSpanElement, ev: MouseEvent) {
     ev.preventDefault();
     switch (ev.type) {
-      case 'mouseup':
-        span.remove();
+      case 'click':
+        console.log(span.className)
+        if (span.className == 'magnet') {
+          this.addStar(span);
+        }
+        if (span.className == 'from') {
+          span.remove();
+        }
         return;
     }
   }
+  private handleMagnetMouseEvent(magnet: Magnet, ev: MouseEvent) {
+    ev.preventDefault();
+    switch (ev.type) {
+      case 'click':
+        this.addStar(magnet.element);
+        return;
+    }
+  }
+
 }
