@@ -162,17 +162,17 @@ export class Table {
 
       })
     }
-    if (this.legalDestinationModel) {
-      this.legalDestinationModel.getLegalLocations(state).then(
-        (destinations) => {
-          this.highlightDestinations(destinations);
-          this.display.innerText += "\n"
-          destinations.forEach(element => {
-            this.display.innerText += element.toFixed(2) + ",";
-          });
+    // if (this.legalDestinationModel) {
+    //   this.legalDestinationModel.getLegalLocations(state).then(
+    //     (destinations) => {
+    //       this.highlightDestinations(destinations);
+    //       this.display.innerText += "\n"
+    //       destinations.forEach(element => {
+    //         this.display.innerText += element.toFixed(2) + ",";
+    //       });
 
-        })
-    }
+    //     })
+    // }
   }
 
   private getElementForLocation(location: number) {
@@ -198,36 +198,41 @@ export class Table {
   }
 
   private highlightSources(sources: Float32Array) {
-    for (const e of this.container.getElementsByClassName('from')) {
-      // TODO: This isn't working.
-      e.parentElement.removeChild(e);
+    let fromElements = this.container.getElementsByClassName('from')
+    while (fromElements.length > 0) {
+      fromElements[0].remove();
     }
     this.highlightLocations(sources,
       (elt: HTMLSpanElement) => {
         const star = document.createElement('span');
         star.innerHTML = "&#x2606;";
         star.classList.add('from');
+        star.addEventListener("mouseup", (me) => {
+          this.handleSpanMouseEvent(star, me);
+        })
         this.container.appendChild(star);
         this.moveToCenter(star, elt.getBoundingClientRect());
       },
       (elt) => { })
   }
 
-  private highlightDestinations(destinations: Float32Array) {
-    for (const e of this.container.getElementsByClassName('to')) {
-      // TODO: This isn't working.
-      e.parentElement.removeChild(e);
-    }
-    this.highlightLocations(destinations,
-      (elt: HTMLSpanElement) => {
-        const star = document.createElement('span');
-        star.innerHTML = "&#x25cb;";
-        star.classList.add('to');
-        this.container.appendChild(star);
-        this.moveToCenter(star, elt.getBoundingClientRect());
-      },
-      (elt) => { })
-  }
+  // private highlightDestinations(destinations: Float32Array) {
+  //   let fromElements = this.container.getElementsByClassName('to')
+  //   while (fromElements.length > 0) {
+  //     fromElements[0].remove();
+  //   }
+  //   this.highlightLocations(destinations,
+  //     (elt: HTMLSpanElement) => {
+  //       const star = document.createElement('span');
+  //       star.innerHTML = "&#x25cb;";
+  //       star.classList.add('to');
+  //       star.addEventListener('mouseup', (me) => {
+  //         this.handleMouseEvent(star., me);
+  //       this.container.appendChild(star);
+  //       this.moveToCenter(star, elt.getBoundingClientRect());
+  //     },
+  //     (elt) => { })
+  // }
 
   private addBag(label: string, x: number, y: number) {
     if (!this.tokenIndex.has(label)) {
@@ -349,5 +354,13 @@ export class Table {
         return;
     }
     this.moveToXY(token.element, ev.clientX, ev.clientY);
+  }
+  private handleSpanMouseEvent(span: HTMLSpanElement, ev: MouseEvent) {
+    ev.preventDefault();
+    switch (ev.type) {
+      case 'mouseup':
+        span.remove();
+        return;
+    }
   }
 }
