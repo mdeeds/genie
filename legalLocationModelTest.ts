@@ -53,5 +53,11 @@ async function testWeighted() {
   console.assert(lossArray[lossArray.length - 1] < 0.01, "testWeighted");
 }
 
+// TODO: Add tests for:
+// 1) Use TTT game, train on ~5 examples, validate on ~100 different states.
+// 2) Use TTT game, train on ~10 examples where one is wrong, assert that 
+//    that one wrong example fits worse than the other nine.
+
 testBasic();
 testWeighted();
+

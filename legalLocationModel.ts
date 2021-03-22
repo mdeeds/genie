@@ -83,7 +83,7 @@ export class LegalLocationModel {
     let history: tf.History = null;
     for (let iteration = 0; iteration < 100; ++iteration) {
       history = await this.model.fit([x, confidence], y, { epochs: 5 });
-      if (history.history['loss'][0] < history.history['loss'][5]) {
+      if (history.history['loss'][0] < history.history['loss'][4]) {
         // Loss is increasing, so we have stopped learning.
         break;
       }
