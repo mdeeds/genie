@@ -1,46 +1,7 @@
 import { DocumentUtil } from "./documentUtil";
 import { LegalLocationModel } from "./legalLocationModel";
-
-class Token {
-  label: string;
-  element: HTMLSpanElement;
-  magnet: Magnet = null;
-  constructor(label: string, element: HTMLSpanElement) {
-    this.label = label;
-    this.element = element;
-  }
-}
-
-class Magnet {
-  element: HTMLSpanElement;
-  private highlightElt: HTMLSpanElement = null;
-  token: Token = null;
-  constructor(element: HTMLSpanElement) {
-    this.element = element;
-  }
-  hasHighlight() {
-    return !!this.highlightElt;
-  }
-
-  highlight(html: string) {
-    this.removeHighlight();
-    this.highlightElt = document.createElement('span');
-    this.highlightElt.classList.add('highlight');
-    this.highlightElt.innerHTML = html;
-    this.element.parentElement.appendChild(this.highlightElt);
-    DocumentUtil.moveToCenter(
-      this.highlightElt, this.element.getBoundingClientRect());
-  }
-  highlightCircle() {
-    this.highlight("&#x25cb;");
-  }
-  removeHighlight() {
-    if (this.highlightElt) {
-      this.highlightElt.parentElement.removeChild(this.highlightElt);
-      this.highlightElt = null;
-    }
-  }
-}
+import { Magnet } from "./magnet";
+import { Token } from "./token";
 
 class LabelIndicator {
   labels: string[];
