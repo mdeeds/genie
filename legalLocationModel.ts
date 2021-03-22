@@ -22,7 +22,7 @@ export class LegalLocationModel {
 
     const weighted_o = tf.layers.multiply()
       .apply([o, inputWeight]) as tf.SymbolicTensor;
-    this.model = tf.model({ inputs: input, outputs: weighted_o });
+    this.model = tf.model({ inputs: [input, inputWeight], outputs: weighted_o });
 
     this.model.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
   }
@@ -82,7 +82,7 @@ export class LegalLocationModel {
     const y = tf.mul(legal, confidence);
     let history: tf.History = null;
     for (let iteration = 0; iteration < 100; ++iteration) {
-      history = await this.model.fit(x, y, { epochs: 5 });
+      history = await this.model.fit([x, confidence], y, { epochs: 5 });
       if (history.history['loss'][0] < history.history['loss'][5]) {
         // Loss is increasing, so we have stopped learning.
         break;
