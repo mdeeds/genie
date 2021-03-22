@@ -37,7 +37,7 @@ export class LegalLocationModel {
 
   getLegalLocations(state: Float32Array): Promise<Float32Array> {
     const inputTensor = tf.tensor(state, [1, state.length]);
-    const inputWeightTensor = tf.ones([this.locationSize])
+    const inputWeightTensor = tf.ones([1, this.locationSize])
 
     const locationTensor = this.model.predict(
       [inputTensor, inputWeightTensor]) as tf.Tensor;
