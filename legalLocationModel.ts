@@ -15,8 +15,12 @@ export class LegalLocationModel {
     this.stateSize = stateSize;
     const input = tf.input({ shape: [stateSize] });
     const inputWeight = tf.input({ shape: [locationSize] });
-    const l1 = tf.layers.dense({ units: stateSize + locationSize }).apply(input);
-    const l2 = tf.layers.dense({ units: stateSize + locationSize }).apply(l1);
+    const l1 = tf.layers.dense({
+      units: stateSize + locationSize,
+    }).apply(input);
+    const l2 = tf.layers.dense({
+      units: stateSize + locationSize,
+    }).apply(l1);
     const o = tf.layers.dense({
       units: locationSize,
       activation: 'hardSigmoid'

@@ -19,7 +19,7 @@ async function testBasic() {
 
   const lossArray = history.history['loss'];
   console.log(lossArray);
-  console.assert(lossArray[lossArray.length - 1] < 0.01, "testBasic");
+  console.assert(lossArray[lossArray.length - 1] < 0.02, "testBasic");
 }
 
 
@@ -50,7 +50,7 @@ async function testWeighted() {
 
   const lossArray = history.history['loss'];
   console.log(lossArray);
-  console.assert(lossArray[lossArray.length - 1] < 0.01, "testWeighted");
+  console.assert(lossArray[lossArray.length - 1] < 0.02, "testWeighted");
 }
 
 async function test5val100() {
@@ -61,7 +61,7 @@ async function test5val100() {
   const llm = await LegalLocationModel.make(18, 9);
   const states: Float32Array[] = [];
   const legalLocations: Float32Array[] = [];
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 1000; i++) {
     var currentState: Float32Array = new Float32Array(18);
     var currentLegalLocation: Float32Array = new Float32Array(9);
     for (let j = 0; j < 9; j++) {
@@ -89,35 +89,35 @@ async function test5val100() {
   console.log(states[0].length);
   console.log(legalLocations.length);
   console.log(legalLocations[0].length);
-  const history = await llm.trainAsync(states, legalLocations);
+  const history = await llm.trainAsync(
+    states.slice(0, 100), legalLocations.slice(0, 100));
   console.log(history.history);
   const accArray = history.history['acc'];
 
+  let right = 0
+  let wrong = 0
+  let unsure = 0;
+  for (let i = 0; i < states.length; i++) {
+    const sources = await llm.getLegalLocations(states[i]);
+    const ll = legalLocations[i];
+    console.assert(sources.length == ll.length, "Length mismatch.");
+    for (let j = 0; j < sources.length; ++j) {
+      const delta = (Math.abs(ll[j] - sources[j]));
+      if (delta < 0.1) {
+        ++right;
+      } else if (delta < 0.8) {
+        ++unsure;
+      } else {
+        ++wrong;
+      }
+    }
+  }
+  console.log(`Right: ${right}`);
+  console.log(`Unsure: ${unsure}`);
+  console.log(`Wrong: ${wrong}`);
 
-  // let right = 0
-  // let wrong = 0
-  // for (let i = 0; i < states.length; i++) {
-  //   llm.getLegalLocations(states[i]).then((sources) => {
-  //     for (let j = 0; j < 9; j++) {
-  //       let isAToken = false;
-  //       if ((states[i][j] + states[i][j + 9]) > 1)
-  //         isAToken = true;
-  //       let isFree = (sources[j] > 0.5);
-  //       if (isAToken !== isFree) {
-  //         right++;
-  //       }
-  //       else {
-  //         wrong++;
-  //       }
-  //     }
-  //     console.log(right)
-  //     console.log(wrong)
-  //   });
-  // }
-  // console.log(right)
-  // console.log(wrong)
-
-  console.assert(accArray[accArray.length - 1] > 0.999, "testBasic");
+  console.assert(wrong === 0, "Has misclasifications");
+  console.assert(right > unsure, "Poor clasification");
 }
 
 // TODO: Add tests for:
@@ -126,7 +126,6 @@ async function test5val100() {
 //    less than ~80% confidence - enough to flag for the user to review.
 // 2) Use TTT game, train on ~10 examples where one is wrong, assert that 
 //    that one wrong example fits worse than the other nine.
-
 
 
 //testBasic();
