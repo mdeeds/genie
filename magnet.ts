@@ -4,10 +4,44 @@ import { Token } from "./token";
 export class Magnet {
   element: HTMLSpanElement;
   private highlightElt: HTMLSpanElement = null;
-  token: Token = null;
+  private tokens: Token[] = [];
   constructor(element: HTMLSpanElement) {
     this.element = element;
   }
+
+  hasTokens(): boolean {
+    return this.tokens.length > 0;
+  }
+
+  label(): string {
+    if (this.tokens.length === 0) {
+      throw "Empt magnet";
+    }
+    return this.tokens[0].label;
+  }
+
+  accepts(token: Token) {
+    if (this.tokens.length === 0) {
+      return true;
+    }
+    if (this.tokens[0].label = token.label) {
+      return true;
+    }
+    return false;
+  }
+
+  add(token: Token) {
+    if (!this.accepts(token)) {
+      throw "Wrong token.";
+    }
+    this.tokens.push(token);
+    token.magnet = this;
+  }
+
+  pop(): Token {
+    return this.tokens.pop();
+  }
+
   hasHighlight() {
     return !!this.highlightElt;
   }
@@ -31,3 +65,8 @@ export class Magnet {
     }
   }
 }
+
+class Bag extends Magnet {
+
+}
+

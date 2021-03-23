@@ -73,8 +73,8 @@ export class Table {
       this.updateDisplay();
     })
 
-    this.addBag("X", 50, 100);
-    this.addBag("O", 50, 200);
+    this.addBag("X", 5, 50, 100);
+    this.addBag("O", 4, 50, 200);
     for (let i = 0; i < 3; ++i) {
       for (let j = 0; j < 3; ++j) {
         this.addMagnet(i * 50 + 200, j * 50 + 100);
@@ -110,8 +110,8 @@ export class Table {
 
     for (let i = 0; i < this.magnets.length; ++i) {
       const m = this.magnets[i];
-      if (m.token !== null) {
-        const tokenIndex = this.tokenIndex.get(m.token.label);
+      if (m.hasTokens()) {
+        const tokenIndex = this.tokenIndex.get(m.label());
         result[i + tokenIndex * numMagnets] = 1.0;
       }
     }
@@ -135,6 +135,9 @@ export class Table {
   }
 
   private updateDisplay() {
+    if (!this.display) {
+      return;
+    }
     const state = this.getStateData();
     this.display.innerText = `${state}`;
     if (this.legalSourceModel) {
@@ -207,21 +210,15 @@ export class Table {
   //     (elt) => { })
   // }
 
-  private addBag(label: string, x: number, y: number) {
+  private addBag(label: string, count: number, x: number, y: number) {
     if (!this.tokenIndex.has(label)) {
       this.tokenIndex.set(label, this.tokenIndex.size);
     }
-    const elt = document.createElement('span');
-    elt.classList.add('bag');
-    elt.style.left = `${x}px`;
-    elt.style.top = `${y}px`;
-    elt.innerText = label;
-    this.container.appendChild(elt);
-
-    elt.addEventListener('mousedown', (me) => {
-      const t = this.makeToken(label, x, y);
-      this.handleMouseEvent(t, me);
-    });
+    this.addMagnet(x, y);
+    for (let i = 0; i < count; ++i) {
+      const token = this.makeToken(label, x, y);
+      this.checkMagnets(token);
+    }
   }
 
   private addLabelIndicator(container, labels: string[], x: number, y: number) {
@@ -281,11 +278,13 @@ export class Table {
   private checkMagnets(token: Token) {
     const tokenBB = token.element.getBoundingClientRect();
     for (const m of this.magnets) {
+      if (!m.accepts(token)) {
+        continue;
+      }
       const magnetBB = m.element.getBoundingClientRect();
       if (this.intersects(magnetBB, tokenBB)) {
         DocumentUtil.moveToCenter(token.element, magnetBB);
-        m.token = token;
-        token.magnet = m;
+        m.add(token);
         break;
       }
     }
@@ -303,12 +302,12 @@ export class Table {
         }
         break;
       case 'mousedown':
-        this.dragging = token;
-        this.dragging.element.classList.add('dragging');
-        if (token.magnet !== null) {
-          token.magnet.token = null;
-          token.magnet = null;
+        if (token.magnet) {
+          this.dragging = token.magnet.pop();
+        } else {
+          this.dragging = token;
         }
+        this.dragging.element.classList.add('dragging');
         break;
       case 'mouseup':
         this.checkMagnets(token);
