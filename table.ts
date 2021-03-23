@@ -129,11 +129,6 @@ export class Table {
     return sourcePositions * destinationPositions;
   }
 
-  // Highlights the move from `sourceIndex` to `destinationIndex`.
-  private highlightMoveSD(sourceIndex: number, destinationIndex: number) {
-    // TODO
-  }
-
   private updateDisplay() {
     if (!this.display) {
       return;
@@ -163,15 +158,6 @@ export class Table {
     // }
   }
 
-  private getElementForLocation(location: number) {
-    if (location < this.magnets.length) {
-      return this.magnets[location];
-    } else {
-      // TODO return the bag.
-      return this.magnets[0];
-    }
-  }
-
   private highlightLocations(locations: Float32Array,
     html: string) {
     for (let i = 0; i < locations.length; ++i) {
@@ -191,24 +177,6 @@ export class Table {
   private highlightSources(sources: Float32Array) {
     this.highlightLocations(sources, "&#x2606;")
   }
-
-  // private highlightDestinations(destinations: Float32Array) {
-  //   let fromElements = this.container.getElementsByClassName('to')
-  //   while (fromElements.length > 0) {
-  //     fromElements[0].remove();
-  //   }
-  //   this.highlightLocations(destinations,
-  //     (elt: HTMLSpanElement) => {
-  //       const star = document.createElement('span');
-  //       star.innerHTML = "&#x25cb;";
-  //       star.classList.add('to');
-  //       star.addEventListener('mouseup', (me) => {
-  //         this.handleMouseEvent(star., me);
-  //       this.container.appendChild(star);
-  //       Table.moveToCenter(star, elt.getBoundingClientRect());
-  //     },
-  //     (elt) => { })
-  // }
 
   private addBag(label: string, count: number, x: number, y: number) {
     if (!this.tokenIndex.has(label)) {
