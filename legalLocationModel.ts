@@ -1,4 +1,6 @@
 import * as tf from '@tensorflow/tfjs';
+import { metrics } from '@tensorflow/tfjs';
+import { activation } from '@tensorflow/tfjs-layers/dist/exports_layers';
 
 // Creates a model intended for determining which locations are legal.
 // This can be used for determining legal sources or legal destinations.
@@ -24,7 +26,9 @@ export class LegalLocationModel {
       .apply([o, inputWeight]) as tf.SymbolicTensor;
     this.model = tf.model({ inputs: [input, inputWeight], outputs: weighted_o });
 
-    this.model.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
+    this.model.compile({ optimizer: 'adam', loss: 'meanSquaredError', metrics: ['accuracy'] });
+
+    this.model.summary()
   }
 
   static make(stateSize: number, locationSize: number): Promise<LegalLocationModel> {
