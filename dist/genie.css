@@ -200,47 +200,21 @@
   z-index: 5;
 }
 
-.from {
-  position: absolute;;
-  text-shadow: 0px 0px 10px #ff4;
-  width: 50px;
-  height: 82px;
-  padding: 0px;
-  text-align: center;
-
-  z-index: 2;
-  font-size: 50px;
-  color: #fff;
-
-  animation-name: spin;
-  animation-duration: 4s;
-  animation-iteration-count: infinite;
-  animation-timing-function: linear; 
-}
-
-@keyframes spin {
-  from {
-      transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.to {
+.highlight {
   position: absolute;;
   text-shadow: 0px 0px 10px #00f;
   width: 50px;
   height: 70px;
   padding: 0px;
   text-align: center;
+  pointer-events: none;
 
   z-index: 2;
   font-size: 50px;
   color: #fff;
 
   animation-name: pulse;
-  animation-duration: 4s;
+  animation-duration: 1s;
   animation-iteration-count: infinite;
   animation-timing-function: ease-in-out; 
 }
@@ -251,7 +225,7 @@
       transform: scale(1.0);
   }
   50% {
-    transform: scale(1.6);
+    transform: scale(1.1);
   }
   100% {
     transform: scale(1.0);

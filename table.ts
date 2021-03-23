@@ -1,22 +1,7 @@
+import { DocumentUtil } from "./documentUtil";
 import { LegalLocationModel } from "./legalLocationModel";
-
-class Token {
-  label: string;
-  element: HTMLSpanElement;
-  magnet: Magnet = null;
-  constructor(label: string, element: HTMLSpanElement) {
-    this.label = label;
-    this.element = element;
-  }
-}
-
-class Magnet {
-  element: HTMLSpanElement;
-  token: Token = null;
-  constructor(element: HTMLSpanElement) {
-    this.element = element;
-  }
-}
+import { Magnet } from "./magnet";
+import { Token } from "./token";
 
 class LabelIndicator {
   labels: string[];
@@ -68,7 +53,7 @@ export class Table {
   constructor() {
     this.tokenIndex = new Map<string, number>();
 
-    const body = document.getElementsByTagName('body')[0];
+    const body = DocumentUtil.getBody();
 
     /***** Player indicator *****/
     const doneButton = document.createElement('span');
@@ -185,46 +170,23 @@ export class Table {
   }
 
   private highlightLocations(locations: Float32Array,
-    highlight: Function, dontHighlight: Function) {
-    const sourcePositions = this.magnets.length + this.tokenIndex.size;
+    html: string) {
     for (let i = 0; i < locations.length; ++i) {
-      const elt = this.magnets[i].element;
+      if (i >= this.magnets.length) {
+        // TODO: Remove this when all locations are magnets.
+        break;
+      }
+      const magnet = this.magnets[i];
       if (locations[i] > 0.5) {
-        highlight(elt);
+        magnet.highlight(html);
       } else {
-        dontHighlight(elt);
+        magnet.removeHighlight();
       }
     }
   }
 
   private highlightSources(sources: Float32Array) {
-    let fromElements = this.container.getElementsByClassName('from')
-    while (fromElements.length > 0) {
-      fromElements[0].remove();
-    }
-    this.highlightLocations(sources,
-      (elt: HTMLSpanElement) => {
-        const star = document.createElement('span');
-        star.innerHTML = "&#x2606;";
-        star.classList.add('from');
-        star.addEventListener('click', (me) => {
-          this.handleSpanMouseEvent(star, me);
-        })
-        this.container.appendChild(star);
-        this.moveToCenter(star, elt.getBoundingClientRect());
-      },
-      (elt) => { })
-  }
-
-  private addStar(elt: Element) {
-    const star = document.createElement('span');
-    star.innerHTML = "&#x2606;";
-    star.classList.add('from');
-    star.addEventListener('click', (me) => {
-      this.handleSpanMouseEvent(star, me)
-    });
-    this.container.appendChild(star);
-    this.moveToCenter(star, elt.getBoundingClientRect());
+    this.highlightLocations(sources, "&#x2606;")
   }
 
   // private highlightDestinations(destinations: Float32Array) {
@@ -240,7 +202,7 @@ export class Table {
   //       star.addEventListener('mouseup', (me) => {
   //         this.handleMouseEvent(star., me);
   //       this.container.appendChild(star);
-  //       this.moveToCenter(star, elt.getBoundingClientRect());
+  //       Table.moveToCenter(star, elt.getBoundingClientRect());
   //     },
   //     (elt) => { })
   // }
@@ -299,11 +261,11 @@ export class Table {
     magnet.classList.add('magnet');
     magnet.style.left = `${x}px`;
     magnet.style.top = `${y}px`;
-    magnet.addEventListener('click', (me) => {
-      this.handleSpanMouseEvent(magnet, me);
-    });
     this.container.appendChild(magnet);
     const m = new Magnet(magnet);
+    magnet.addEventListener('click', (me) => {
+      this.handleMagnetMouseEvent(m, me);
+    });
     this.magnets.push(m);
   }
 
@@ -316,25 +278,12 @@ export class Table {
     }
   }
 
-  private moveToXY(token: HTMLSpanElement, x: number, y: number) {
-    const bb = this.container.getBoundingClientRect();
-    const tokenBB = token.getBoundingClientRect();
-    token.style.left = `${x - tokenBB.width / 2 - bb.left}px`;
-    token.style.top = `${y - tokenBB.height / 2 - bb.top}px`;
-  }
-
-  private moveToCenter(token: HTMLSpanElement, location: DOMRect) {
-    const x = (location.left + location.right) / 2;
-    const y = (location.top + location.bottom) / 2;
-    this.moveToXY(token, x, y);
-  }
-
   private checkMagnets(token: Token) {
     const tokenBB = token.element.getBoundingClientRect();
     for (const m of this.magnets) {
       const magnetBB = m.element.getBoundingClientRect();
       if (this.intersects(magnetBB, tokenBB)) {
-        this.moveToCenter(token.element, magnetBB);
+        DocumentUtil.moveToCenter(token.element, magnetBB);
         m.token = token;
         token.magnet = m;
         break;
@@ -367,28 +316,18 @@ export class Table {
         this.dragging = null;
         return;
     }
-    this.moveToXY(token.element, ev.clientX, ev.clientY);
-  }
-  private handleSpanMouseEvent(span: HTMLSpanElement, ev: MouseEvent) {
-    ev.preventDefault();
-    switch (ev.type) {
-      case 'click':
-        if (span.classList.contains('magnet')) {
-          this.addStar(span);
-        }
-        if (span.classList.contains('from')) {
-          span.remove();
-        }
-        return;
-    }
+    DocumentUtil.moveToXY(token.element, ev.clientX, ev.clientY);
   }
   private handleMagnetMouseEvent(magnet: Magnet, ev: MouseEvent) {
     ev.preventDefault();
     switch (ev.type) {
       case 'click':
-        this.addStar(magnet.element);
+        if (magnet.hasHighlight()) {
+          magnet.removeHighlight();
+        } else {
+          magnet.highlightCircle();
+        }
         return;
     }
   }
-
 }
