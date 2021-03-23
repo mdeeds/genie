@@ -17,20 +17,25 @@ export class LegalLocationModel {
     const inputWeight = tf.input({ shape: [locationSize] });
     const l1 = tf.layers.dense({
       units: stateSize + locationSize,
+      activation: "relu",
+      //kernelRegularizer: tf.regularizers.l2({ l2: 0.01 }),
     }).apply(input);
     const l2 = tf.layers.dense({
       units: stateSize + locationSize,
+      activation: "relu",
+      //kernelRegularizer: tf.regularizers.l2({ l2: 0.01 }),
     }).apply(l1);
     const o = tf.layers.dense({
       units: locationSize,
-      activation: 'hardSigmoid'
+      //activation: 'hardSigmoid'
+      activation: 'sigmoid'
     }).apply(l2) as tf.SymbolicTensor;
 
     const weighted_o = tf.layers.multiply()
       .apply([o, inputWeight]) as tf.SymbolicTensor;
     this.model = tf.model({ inputs: [input, inputWeight], outputs: weighted_o });
 
-    this.model.compile({ optimizer: 'adam', loss: 'meanSquaredError', metrics: ['accuracy'] });
+    this.model.compile({ optimizer: 'adam', loss: tf.losses.sigmoidCrossEntropy, metrics: ['accuracy'] });  //loss: tf.losses.sigmoidCrossEntropy
 
     this.model.summary()
   }
