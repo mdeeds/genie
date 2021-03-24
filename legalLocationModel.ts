@@ -1,5 +1,6 @@
 import * as tf from '@tensorflow/tfjs';
 import { metrics } from '@tensorflow/tfjs';
+import { prod } from '@tensorflow/tfjs-core';
 import { activation } from '@tensorflow/tfjs-layers/dist/exports_layers';
 
 // Creates a model intended for determining which locations are legal.
@@ -8,43 +9,86 @@ export class LegalLocationModel {
   private model: tf.LayersModel;
   private locationSize: number;
   private stateSize: number;
+  private stateShapes: tf.Shape[];
   // Builds a model which can be trained to identify where pieces can 
   // be moved from.
-  private constructor(stateSize: number, locationSize: number) {
+  private constructor(stateShapes: tf.Shape[], locationSize: number) {
     this.locationSize = locationSize;
+    this.stateShapes = stateShapes;
+    let stateSize = 0;
+    for (const s of stateShapes) {
+      let product = 1;
+      for (const d of s) {
+        product *= d;
+      }
+      stateSize += product;
+    }
     this.stateSize = stateSize;
-    const input = tf.input({ shape: [stateSize] });
-    const inputWeight = tf.input({ shape: [locationSize] });
+    const inputs: tf.SymbolicTensor[] = [];
+
+    for (const shape of stateShapes) {
+      console.log(`AAAAA: input: ${shape}`);
+      inputs.push(tf.input({ shape: shape }));
+    }
+    const convLayers: tf.SymbolicTensor[] = [];
+    for (const input of inputs) {
+      console.log(`AAAAA: input.shape: ${input.shape}`);
+      if (input.shape.length === 4 &&
+        (input.shape[1] > 1 || input.shape[2] > 1)) {
+        const smallerDim = Math.min(input.shape[1], input.shape[2]);
+        console.log(`AAAAA: Smaller dim: ${smallerDim}`);
+        for (let d = 2; d < smallerDim; ++d) {
+          const convLayer = tf.layers.conv2d({
+            kernelSize: d, filters: 3, padding: 'same'
+          }).apply(input) as tf.SymbolicTensor;
+          console.log(`AAAAA Conv shape: ${convLayer.shape}`);
+          convLayers.push(
+            tf.layers.flatten().apply(convLayer) as tf.SymbolicTensor);
+        }
+      }
+    }
+
+    const flatInputs: tf.SymbolicTensor[] = [];
+    for (const input of inputs) {
+      flatInputs.push(tf.layers.flatten().apply(input) as tf.SymbolicTensor);
+    }
+
+    const layerArray = [...flatInputs, ...convLayers];
+    console.log(`AAAAA: layerArray.length: ${layerArray.length}`);
+    const flat = tf.layers.concatenate().apply(layerArray);
+
     const l1 = tf.layers.dense({
-      units: stateSize + locationSize,
-    }).apply(input);
+      units: stateSize + locationSize, activation: 'relu'
+    }).apply(flat);
     const l2 = tf.layers.dense({
-      units: stateSize + locationSize,
+      units: stateSize + locationSize, activation: 'relu'
     }).apply(l1);
     const o = tf.layers.dense({
       units: locationSize,
-      activation: 'hardSigmoid'
+      activation: 'sigmoid'
     }).apply(l2) as tf.SymbolicTensor;
 
+    const inputWeight = tf.input({ shape: [locationSize] });
     const weighted_o = tf.layers.multiply()
       .apply([o, inputWeight]) as tf.SymbolicTensor;
-    this.model = tf.model({ inputs: [input, inputWeight], outputs: weighted_o });
+    this.model = tf.model({ inputs: [...inputs, inputWeight], outputs: weighted_o });
 
     this.model.compile({ optimizer: 'adam', loss: 'meanSquaredError', metrics: ['accuracy'] });
 
     this.model.summary()
   }
 
-  static make(stateSize: number, locationSize: number): Promise<LegalLocationModel> {
+  static make(stateShapes: tf.Shape[],
+    locationSize: number): Promise<LegalLocationModel> {
     return new Promise((resolve, reject) => {
       tf.setBackend('cpu').then(() => {
-        resolve(new LegalLocationModel(stateSize, locationSize));
+        resolve(new LegalLocationModel(stateShapes, locationSize));
       });
     });
   }
 
   getLegalLocations(state: Float32Array): Promise<Float32Array> {
-    const inputTensor = tf.tensor(state, [1, state.length]);
+    const inputTensor = tf.tensor(state, [1, ...this.stateShapes[0]]);
     const inputWeightTensor = tf.ones([1, this.locationSize])
 
     const locationTensor = this.model.predict(
@@ -84,7 +128,7 @@ export class LegalLocationModel {
       `Got ${states[0].length}, expected ${this.stateSize}`;
     }
 
-    const x = tf.tensor(states, [batchSize, this.stateSize]);
+    const x = tf.tensor(states, [batchSize, ...this.stateShapes[0]]);
     const legal = tf.tensor(legalLocations, [batchSize, this.locationSize]);
     const confidence = tf.tensor(confidenceLocations, [batchSize, this.locationSize]);
     const y = tf.mul(legal, confidence);

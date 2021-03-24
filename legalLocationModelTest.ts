@@ -1,7 +1,7 @@
 import { LegalLocationModel } from "./legalLocationModel";
 
 async function testBasic() {
-  const llm = await LegalLocationModel.make(2, 2);
+  const llm = await LegalLocationModel.make([[2]], 2);
 
   const states: Float32Array[] = [];
   states.push(new Float32Array([0, 0]));
@@ -24,7 +24,7 @@ async function testBasic() {
 
 
 async function testWeighted() {
-  const llm = await LegalLocationModel.make(2, 2);
+  const llm = await LegalLocationModel.make([[2]], 2);
 
   const states: Float32Array[] = [];
   states.push(new Float32Array([0, 0]));
@@ -58,7 +58,7 @@ async function test5val100() {
   // state vecor is 2 types of tokens in 9 spots = 18 features in length
   // legal locations vector is the 9 spots
 
-  const llm = await LegalLocationModel.make(18, 9);
+  const llm = await LegalLocationModel.make([[3, 3, 2]], 9);
   const states: Float32Array[] = [];
   const legalLocations: Float32Array[] = [];
   for (let i = 0; i < 1000; i++) {
@@ -67,18 +67,12 @@ async function test5val100() {
     for (let j = 0; j < 9; j++) {
       let randomNumber = Math.random();
       if (randomNumber < 0.3) {
-        currentState[j] = 0;
         currentState[j + 9] = 1;
-        currentLegalLocation[j] = 0;
       }
       else if (randomNumber < 0.6) {
         currentState[j] = 1;
-        currentState[j + 9] = 0;
-        currentLegalLocation[j] = 0;
       }
       else {
-        currentState[j] = 0;
-        currentState[j + 9] = 0;
         currentLegalLocation[j] = 1;
       }
     }

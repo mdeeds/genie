@@ -96,10 +96,10 @@ export class Table {
   async initializeModels() {
     const sampleData = this.getStateData();
     this.legalSourceModel = await LegalLocationModel.make(
-      sampleData.length, this.magnets.length + this.tokenIndex.size);
+      [[sampleData.length, 1]], this.magnets.length + this.tokenIndex.size);
 
     this.legalDestinationModel = await LegalLocationModel.make(
-      sampleData.length, this.magnets.length + this.tokenIndex.size);
+      [[sampleData.length, 1]], this.magnets.length + this.tokenIndex.size);
   }
 
   getStateData(): Float32Array {
