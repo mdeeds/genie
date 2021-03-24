@@ -73,7 +73,7 @@ export class LegalLocationModel {
       .apply([o, inputWeight]) as tf.SymbolicTensor;
     this.model = tf.model({ inputs: [...inputs, inputWeight], outputs: weighted_o });
 
-    this.model.compile({ optimizer: 'adam', loss: 'meanSquaredError', metrics: ['accuracy'] });
+    this.model.compile({ optimizer: 'adam', loss: tf.losses.sigmoidCrossEntropy, metrics: ['accuracy'] });  //loss: tf.losses.sigmoidCrossEntropy
 
     this.model.summary()
   }
