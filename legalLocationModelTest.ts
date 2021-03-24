@@ -1,5 +1,6 @@
 import { activation } from "@tensorflow/tfjs-layers/dist/exports_layers";
 import { LegalLocationModel } from "./legalLocationModel";
+import { ModelUtil } from "./modelUtil";
 
 async function testBasic() {
   const llm = await LegalLocationModel.make([[2]], 2);
@@ -70,10 +71,10 @@ function RandomExamples(states: Float32Array[], legalLocations: Float32Array[], 
     for (let j = 0; j < 9; j++) {
       let randomNumber = Math.random();
       if (randomNumber < 0.3) {
-        currentState[j + 9] = 1;
+        currentState[j * 2 + 1] = 1;
       }
       else if (randomNumber < 0.6) {
-        currentState[j] = 1;
+        currentState[j * 2] = 1;
       }
       else {
         currentLegalLocation[j] = 1;
@@ -92,6 +93,11 @@ async function validate(llm: LegalLocationModel, states: Float32Array[], legalLo
   for (let i = 0; i < states.length; i++) {
     const sources = await llm.getLegalLocations(states[i]);
     const ll = legalLocations[i];
+    // if (i < 4) {
+    //   console.log(`state:  ${states[i]}`);
+    //   console.log(`actual: ${sources}`);
+    //   console.log(`expect: ${ll}`);
+    // }
     console.assert(sources.length == ll.length, "Length mismatch.");
     for (let j = 0; j < sources.length; ++j) {
       const delta = (Math.abs(ll[j] - sources[j]));
@@ -131,7 +137,7 @@ async function validate(llm: LegalLocationModel, states: Float32Array[], legalLo
   // console.log(`Unsure: ${unsure}`);
   // console.log(`Wrong: ${wrong}`);
   console.log(`${right},${unsure},${wrong}`);
-  return { right, unsure, wrong };
+  return [right, unsure, wrong];
 }
 
 async function confidence(llm: LegalLocationModel, states: Float32Array[]) {
@@ -157,15 +163,22 @@ async function test5val100() {
   const legalLocations: Float32Array[] = [];
   RandomExamples(states, legalLocations, 10000);
 
+  // for (let i = 0; i < 4; ++i) {
+  //   console.log(`state: ${states[i]}`);
+  //   console.log(`legal: ${legalLocations[i]}`);
+  // }
+
   const history = await llm.trainAsync(
-    states.slice(0, 10), legalLocations.slice(0, 10));
+    states.slice(0, 100), legalLocations.slice(0, 100));
   console.log(history.history);
   const accArray = history.history['acc'];
+
+  ModelUtil.printModelWeights(llm.getModel());
 
   let right = 0
   let wrong = 0
   let unsure = 0;
-  ({ right, unsure, wrong } = await validate(llm, states, legalLocations));
+  ([right, unsure, wrong] = await validate(llm, states, legalLocations));
 
   console.assert(wrong === 0, "Has misclasifications");
   console.assert(right > unsure, "Poor clasification");
@@ -189,9 +202,7 @@ async function testItterative() {
   for (let i = 0; i < 100; i++) {
     // find the most unclear example
     var confidences = await confidence(llm, states);
-    let temp = confidences.slice()
-    temp.sort();
-    let lowest = Math.min(...temp)
+    let lowest = Math.min(...confidences)
     let index = confidences.indexOf(lowest);
     //var index = Math.floor(Math.random() * states.length);
 
@@ -205,7 +216,7 @@ async function testItterative() {
       trainingStates, trainningLegalLocations);
 
     // validate model
-    ({ right, unsure, wrong } = await validate(llm, states, legalLocations));
+    ([right, unsure, wrong] = await validate(llm, states, legalLocations));
   }
 
 
@@ -223,6 +234,6 @@ async function testItterative() {
 
 //testBasic();
 // testWeighted();
-//test5val100();
+// test5val100();
 testItterative();
 

@@ -1,7 +1,4 @@
 import * as tf from '@tensorflow/tfjs';
-import { metrics } from '@tensorflow/tfjs';
-import { prod } from '@tensorflow/tfjs-core';
-import { activation } from '@tensorflow/tfjs-layers/dist/exports_layers';
 
 // Creates a model intended for determining which locations are legal.
 // This can be used for determining legal sources or legal destinations.
@@ -31,20 +28,26 @@ export class LegalLocationModel {
       inputs.push(tf.input({ shape: shape }));
     }
     const convLayers: tf.SymbolicTensor[] = [];
+    const nonConvLayers: tf.SymbolicTensor[] = [];
     for (const input of inputs) {
       console.log(`AAAAA: input.shape: ${input.shape}`);
       if (input.shape.length === 4 &&
         (input.shape[1] > 1 || input.shape[2] > 1)) {
         const smallerDim = Math.min(input.shape[1], input.shape[2]);
         console.log(`AAAAA: Smaller dim: ${smallerDim}`);
-        for (let d = 2; d < smallerDim; ++d) {
+        // for (let d = 1; d <= smallerDim; ++d) {
+        for (const d of [1]) {
           const convLayer = tf.layers.conv2d({
-            kernelSize: d, filters: 3, padding: 'same'
+            kernelSize: d, filters: 1, padding: 'valid',
+            activation: 'hardSigmoid'
           }).apply(input) as tf.SymbolicTensor;
           console.log(`AAAAA Conv shape: ${convLayer.shape}`);
           convLayers.push(
             tf.layers.flatten().apply(convLayer) as tf.SymbolicTensor);
         }
+      } else {
+        nonConvLayers.push(
+          tf.layers.flatten().apply(input) as tf.SymbolicTensor);
       }
     }
 
@@ -53,29 +56,40 @@ export class LegalLocationModel {
       flatInputs.push(tf.layers.flatten().apply(input) as tf.SymbolicTensor);
     }
 
-    const layerArray = [...flatInputs, ...convLayers];
-    console.log(`AAAAA: layerArray.length: ${layerArray.length}`);
-    const flat = tf.layers.concatenate().apply(layerArray);
+    const layerArray = [...nonConvLayers, ...convLayers];
+    let flat: tf.SymbolicTensor;
+    if (layerArray.length === 1) {
+      flat = layerArray[0]
+    } else {
+      flat = tf.layers.concatenate().apply(layerArray) as tf.SymbolicTensor;
+    }
+    let o = flat;
 
-    const l1 = tf.layers.dense({
-      units: stateSize + locationSize, activation: 'relu'
-    }).apply(flat);
-    const l2 = tf.layers.dense({
-      units: stateSize + locationSize, activation: 'relu'
-    }).apply(l1);
-    const o = tf.layers.dense({
-      units: locationSize,
-      activation: 'sigmoid'
-    }).apply(l2) as tf.SymbolicTensor;
+    if (flat.shape[1] != locationSize) {
+      o = tf.layers.dense({
+        units: locationSize,
+        activation: 'sigmoid'
+      }).apply(flat) as tf.SymbolicTensor;
+    }
 
     const inputWeight = tf.input({ shape: [locationSize] });
     const weighted_o = tf.layers.multiply()
       .apply([o, inputWeight]) as tf.SymbolicTensor;
-    this.model = tf.model({ inputs: [...inputs, inputWeight], outputs: weighted_o });
+    this.model = tf.model({
+      inputs: [...inputs, inputWeight],
+      outputs: weighted_o
+    });
 
-    this.model.compile({ optimizer: 'adam', loss: tf.losses.sigmoidCrossEntropy, metrics: ['accuracy'] });  //loss: tf.losses.sigmoidCrossEntropy
+    this.model.compile({
+      optimizer: 'adam', loss: tf.losses.meanSquaredError,
+      metrics: ['accuracy']
+    });  //loss: tf.losses.sigmoidCrossEntropy
 
     this.model.summary()
+  }
+
+  getModel() {
+    return this.model;
   }
 
   static make(stateShapes: tf.Shape[],
