@@ -34,30 +34,37 @@ class LabelIndicator {
 }
 
 class SelectBox {
+  private x0: number;
+  private y0: number;
   private left: number;
   private top: number;
   private width: number;
   private height: number;
   private elt: HTMLSpanElement;
+  active: boolean;
   constructor(startX: number, startY: number,
     container: HTMLDivElement) {
-    this.left = startX;
-    this.top = startY;
+    const bb = container.getBoundingClientRect();
+    this.x0 = startX - bb.left;
+    this.y0 = startY - bb.top;
+    this.left = this.x0;
+    this.top = this.y0;
     this.width = 0;
     this.height = 0;
     this.elt = document.createElement('span');
     this.elt.classList.add('selection');
     container.appendChild(this.elt);
+    this.active = true;
   }
 
   extendTo(x: number, y: number) {
     const bb = this.elt.parentElement.getBoundingClientRect();
-    x -= bb.left;
-    y -= bb.top;
-    this.width = Math.abs(x - this.left);
-    this.height = Math.abs(y - this.top);
-    this.left = Math.min(this.left, x);
-    this.top = Math.min(this.top, y);
+    const x1 = x - bb.left;
+    const y1 = y - bb.top;
+    this.width = Math.abs(this.x0 - x1);
+    this.height = Math.abs(this.y0 - y1);
+    this.left = Math.min(this.x0, x1);
+    this.top = Math.min(this.y0, y1);
     this.elt.style.setProperty('left', `${this.left}px`);
     this.elt.style.setProperty('top', `${this.top}px`);
     this.elt.style.setProperty('width', `${this.width}px`);
@@ -105,19 +112,22 @@ export class Table {
     body.appendChild(this.container);
 
     this.container.addEventListener('mousedown', (ev) => {
+      if (this.selectBox) {
+        this.selectBox.remove();
+      }
       this.selectBox = new SelectBox(ev.x, ev.y, this.container);
     });
     this.container.addEventListener('mousemove', (ev) => {
-      if (this.selectBox) {
+      if (this.selectBox && this.selectBox.active) {
         this.selectBox.extendTo(ev.clientX, ev.clientY);
       }
     });
     this.container.addEventListener('mouseup', (ev) => {
       if (this.selectBox) {
-        this.selectBox.remove();
-        this.selectBox = null;
+        this.selectBox.active = false;
       }
     });
+
 
     const playerIndicator =
       this.addLabelIndicator(this.container, ['X to play', 'O to play'], 0, 0);
@@ -141,8 +151,6 @@ export class Table {
     this.display.classList.add('display');
     body.appendChild(this.display);
     this.display.innerText = "** D I S P L A Y **";
-    this.updateDisplay();
-
     this.initializeModels();
   }
 
@@ -153,6 +161,7 @@ export class Table {
 
     this.legalDestinationModel = await LegalLocationModel.make(
       [[sampleData.length, 1]], this.magnets.length + this.tokenIndex.size);
+    this.updateDisplay();
   }
 
   getStateData(): Float32Array {
@@ -314,7 +323,7 @@ export class Table {
 
   private dragging: Token;
   private handleMouseEvent(token: Token, ev: MouseEvent) {
-    ev.preventDefault();
+    ev.stopPropagation();
     switch (ev.type) {
       case 'mousemove':
       case 'mouseout':
@@ -323,7 +332,7 @@ export class Table {
         }
         break;
       case 'mousedown':
-        if (token.magnet) {
+        if (token.magnet && token.magnet.hasTokens()) {
           this.dragging = token.magnet.pop();
         } else {
           this.dragging = token;
@@ -332,9 +341,11 @@ export class Table {
         break;
       case 'mouseup':
         this.checkMagnets(token);
-        this.dragging.element.classList.remove('dragging');
-        this.dragging = null;
-        return;
+        if (this.dragging) {
+          this.dragging.element.classList.remove('dragging');
+          this.dragging = null;
+        }
+        break;
     }
     DocumentUtil.moveToXY(token.element, ev.clientX, ev.clientY);
   }
