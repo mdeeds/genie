@@ -1,4 +1,5 @@
 import * as tf from '@tensorflow/tfjs';
+import { Log } from './log';
 
 // Creates a model intended for determining which locations are legal.
 // This can be used for determining legal sources or legal destinations.
@@ -24,17 +25,17 @@ export class LegalLocationModel {
     const inputs: tf.SymbolicTensor[] = [];
 
     for (const shape of stateShapes) {
-      console.log(`AAAAA: input: ${shape}`);
+      Log.debug(`input: ${shape}`);
       inputs.push(tf.input({ shape: shape }));
     }
     const convLayers: tf.SymbolicTensor[] = [];
     const nonConvLayers: tf.SymbolicTensor[] = [];
     for (const input of inputs) {
-      console.log(`AAAAA: input.shape: ${input.shape}`);
+      Log.debug(`input.shape: ${input.shape}`);
       if (input.shape.length === 4 &&
         (input.shape[1] > 1 || input.shape[2] > 1)) {
         const smallerDim = Math.min(input.shape[1], input.shape[2]);
-        console.log(`AAAAA: Smaller dim: ${smallerDim}`);
+        Log.debug(`Smaller dim: ${smallerDim}`);
         // for (let d = 1; d <= smallerDim; ++d) {
         for (const d of [1]) {
           var convLayer = tf.layers.conv2d({
@@ -45,7 +46,7 @@ export class LegalLocationModel {
             kernelSize: d, filters: 1, padding: 'same',
             activation: 'hardSigmoid'
           }).apply(convLayer) as tf.SymbolicTensor;
-          console.log(`AAAAA Conv shape: ${convLayer.shape}`);
+          Log.debug(`Conv shape: ${convLayer.shape}`);
           convLayers.push(
             tf.layers.flatten().apply(convLayer) as tf.SymbolicTensor);
         }
@@ -91,7 +92,7 @@ export class LegalLocationModel {
       metrics: ['accuracy']
     });  //loss: tf.losses.sigmoidCrossEntropy
 
-    this.model.summary()
+    this.model.summary(null, null, Log.debug);
   }
 
   getModel() {
