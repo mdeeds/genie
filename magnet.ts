@@ -16,7 +16,7 @@ export class Magnet {
   tokenValues(tokenIndex: Map<string, number>): Float32Array {
     const result = new Float32Array(tokenIndex.size);
     for (const t of this.tokens) {
-      const i = tokenIndex.get(t.label);
+      const i = tokenIndex.get(t.getLabel());
       result[i] = result[i] + 1;
     }
     return result;
@@ -24,16 +24,16 @@ export class Magnet {
 
   label(): string {
     if (this.tokens.length === 0) {
-      throw "Empt magnet";
+      throw "Empty magnet";
     }
-    return this.tokens[0].label;
+    return this.tokens[0].getLabel();
   }
 
   accepts(token: Token) {
     if (this.tokens.length === 0) {
       return true;
     }
-    if (this.tokens[0].label = token.label) {
+    if (this.tokens[0].getLabel() === token.getLabel()) {
       return true;
     }
     return false;
@@ -44,6 +44,10 @@ export class Magnet {
       throw "Wrong token.";
     }
     this.tokens.push(token);
+    let message: string = "";
+    for (const t of this.tokens) {
+      message += t.getLabel();
+    }
     token.magnet = this;
   }
 

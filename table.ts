@@ -165,8 +165,6 @@ export class Table {
   }
 
   getStateData(): Float32Array {
-    console.log(`AAAAA tokens: ${this.tokenIndex.size}`);
-    console.log(`AAAAA magnets: ${this.magnets.length}`);
     const numTokens = this.tokenIndex.size;
     const numMagnets = this.magnets.length;
     const numIndicators = this.indicators.length;
@@ -177,7 +175,7 @@ export class Table {
       if (m.hasTokens()) {
         const values = m.tokenValues(this.tokenIndex);
         for (let tokenIndex = 0; tokenIndex < values.length; ++tokenIndex) {
-          result[i + tokenIndex * numMagnets] = values[tokenIndex];
+          result[i * numTokens + tokenIndex] = values[tokenIndex];
         }
       }
     }
@@ -310,14 +308,14 @@ export class Table {
   }
 
   private checkMagnets(token: Token) {
-    const tokenBB = token.element.getBoundingClientRect();
+    const tokenBB = token.getElement().getBoundingClientRect();
     for (const m of this.magnets) {
       if (!m.accepts(token)) {
         continue;
       }
       const magnetBB = m.element.getBoundingClientRect();
       if (this.intersects(magnetBB, tokenBB)) {
-        DocumentUtil.moveToCenter(token.element, magnetBB);
+        DocumentUtil.moveToCenter(token.getElement(), magnetBB);
         m.add(token);
         break;
       }
@@ -341,17 +339,17 @@ export class Table {
         } else {
           this.dragging = token;
         }
-        this.dragging.element.classList.add('dragging');
+        this.dragging.getElement().classList.add('dragging');
         break;
       case 'mouseup':
         this.checkMagnets(token);
         if (this.dragging) {
-          this.dragging.element.classList.remove('dragging');
+          this.dragging.getElement().classList.remove('dragging');
           this.dragging = null;
         }
         break;
     }
-    DocumentUtil.moveToXY(token.element, ev.clientX, ev.clientY);
+    DocumentUtil.moveToXY(token.getElement(), ev.clientX, ev.clientY);
   }
   private handleMagnetMouseEvent(magnet: Magnet, ev: MouseEvent) {
     ev.preventDefault();
