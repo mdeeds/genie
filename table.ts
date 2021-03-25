@@ -165,6 +165,8 @@ export class Table {
   }
 
   getStateData(): Float32Array {
+    console.log(`AAAAA tokens: ${this.tokenIndex.size}`);
+    console.log(`AAAAA magnets: ${this.magnets.length}`);
     const numTokens = this.tokenIndex.size;
     const numMagnets = this.magnets.length;
     const numIndicators = this.indicators.length;
@@ -173,8 +175,10 @@ export class Table {
     for (let i = 0; i < this.magnets.length; ++i) {
       const m = this.magnets[i];
       if (m.hasTokens()) {
-        const tokenIndex = this.tokenIndex.get(m.label());
-        result[i + tokenIndex * numMagnets] = 1.0;
+        const values = m.tokenValues(this.tokenIndex);
+        for (let tokenIndex = 0; tokenIndex < values.length; ++tokenIndex) {
+          result[i + tokenIndex * numMagnets] = values[tokenIndex];
+        }
       }
     }
     for (let i = 0; i < numIndicators; ++i) {

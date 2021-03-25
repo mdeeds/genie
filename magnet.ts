@@ -13,6 +13,15 @@ export class Magnet {
     return this.tokens.length > 0;
   }
 
+  tokenValues(tokenIndex: Map<string, number>): Float32Array {
+    const result = new Float32Array(tokenIndex.size);
+    for (const t of this.tokens) {
+      const i = tokenIndex.get(t.label);
+      result[i] = result[i] + 1;
+    }
+    return result;
+  }
+
   label(): string {
     if (this.tokens.length === 0) {
       throw "Empt magnet";
