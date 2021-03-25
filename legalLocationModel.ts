@@ -37,10 +37,14 @@ export class LegalLocationModel {
         console.log(`AAAAA: Smaller dim: ${smallerDim}`);
         // for (let d = 1; d <= smallerDim; ++d) {
         for (const d of [1]) {
-          const convLayer = tf.layers.conv2d({
-            kernelSize: d, filters: 1, padding: 'valid',
-            activation: 'hardSigmoid'
+          var convLayer = tf.layers.conv2d({
+            kernelSize: smallerDim, filters: smallerDim * smallerDim, padding: 'same',
+            activation: 'relu',
           }).apply(input) as tf.SymbolicTensor;
+          convLayer = tf.layers.conv2d({
+            kernelSize: d, filters: 1, padding: 'same',
+            activation: 'hardSigmoid'
+          }).apply(convLayer) as tf.SymbolicTensor;
           console.log(`AAAAA Conv shape: ${convLayer.shape}`);
           convLayers.push(
             tf.layers.flatten().apply(convLayer) as tf.SymbolicTensor);
@@ -80,8 +84,10 @@ export class LegalLocationModel {
       outputs: weighted_o
     });
 
+    let opt = tf.train.adam(0.001);
+
     this.model.compile({
-      optimizer: 'adam', loss: tf.losses.meanSquaredError,
+      optimizer: opt, loss: tf.losses.meanSquaredError,
       metrics: ['accuracy']
     });  //loss: tf.losses.sigmoidCrossEntropy
 
