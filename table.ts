@@ -33,6 +33,42 @@ class LabelIndicator {
   }
 }
 
+class SelectBox {
+  private left: number;
+  private top: number;
+  private width: number;
+  private height: number;
+  private elt: HTMLSpanElement;
+  constructor(startX: number, startY: number,
+    container: HTMLDivElement) {
+    this.left = startX;
+    this.top = startY;
+    this.width = 0;
+    this.height = 0;
+    this.elt = document.createElement('span');
+    this.elt.classList.add('selection');
+    container.appendChild(this.elt);
+  }
+
+  extendTo(x: number, y: number) {
+    const bb = this.elt.parentElement.getBoundingClientRect();
+    x -= bb.left;
+    y -= bb.top;
+    this.width = Math.abs(x - this.left);
+    this.height = Math.abs(y - this.top);
+    this.left = Math.min(this.left, x);
+    this.top = Math.min(this.top, y);
+    this.elt.style.setProperty('left', `${this.left}px`);
+    this.elt.style.setProperty('top', `${this.top}px`);
+    this.elt.style.setProperty('width', `${this.width}px`);
+    this.elt.style.setProperty('height', `${this.height}px`);
+  }
+
+  remove() {
+    this.elt.parentElement.removeChild(this.elt);
+  }
+}
+
 export class Table {
   private legalSourceModel: LegalLocationModel;
   private legalDestinationModel: LegalLocationModel;
@@ -50,6 +86,8 @@ export class Table {
   // Maps token label to an index.  This is used to generate a State
   // object from the magnets.
   private tokenIndex: Map<string, number>;
+
+  private selectBox: SelectBox;
   constructor() {
     this.tokenIndex = new Map<string, number>();
 
@@ -65,6 +103,21 @@ export class Table {
     this.container = document.createElement('div');
     this.container.classList.add('table');
     body.appendChild(this.container);
+
+    this.container.addEventListener('mousedown', (ev) => {
+      this.selectBox = new SelectBox(ev.x, ev.y, this.container);
+    });
+    this.container.addEventListener('mousemove', (ev) => {
+      if (this.selectBox) {
+        this.selectBox.extendTo(ev.clientX, ev.clientY);
+      }
+    });
+    this.container.addEventListener('mouseup', (ev) => {
+      if (this.selectBox) {
+        this.selectBox.remove();
+        this.selectBox = null;
+      }
+    });
 
     const playerIndicator =
       this.addLabelIndicator(this.container, ['X to play', 'O to play'], 0, 0);

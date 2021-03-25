@@ -20,11 +20,18 @@
 }
 
 /* ZIndex Class */
-/* 4 move hover */
+/* 4 move hover selection */
 /* 3 move */
 /* 2 good bad */
 /* 1 unsorted legal illegal */
 /* 0 sortCell */
+
+.selection {
+  border: 1px dashed #040;
+  background-color: #fff0;
+  position: absolute;
+  pointer-events: none;
+}
 
 .sortCell {
   margin: 5px;
