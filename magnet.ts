@@ -3,7 +3,7 @@ import { Token } from "./token";
 
 export class Magnet {
   element: HTMLSpanElement;
-  private highlightElt: HTMLSpanElement = null;
+  private highlightElts: HTMLSpanElement[] = [];
   private tokens: Token[] = [];
   constructor(element: HTMLSpanElement) {
     this.element = element;
@@ -56,26 +56,31 @@ export class Magnet {
   }
 
   hasHighlight() {
-    return !!this.highlightElt;
+    return this.highlightElts.length > 0;
   }
 
   highlight(html: string) {
-    this.removeHighlight();
-    this.highlightElt = document.createElement('span');
-    this.highlightElt.classList.add('highlight');
-    this.highlightElt.innerHTML = html;
-    this.element.parentElement.appendChild(this.highlightElt);
+    const highlightElt = document.createElement('span');
+    highlightElt.classList.add('highlight');
+    highlightElt.innerHTML = html;
+    this.element.parentElement.appendChild(highlightElt);
     DocumentUtil.moveToCenter(
-      this.highlightElt, this.element.getBoundingClientRect());
+      highlightElt, this.element.getBoundingClientRect());
+    this.highlightElts.push(highlightElt);
   }
   highlightCircle() {
     this.highlight("&#x25cb;");
   }
-  removeHighlight() {
-    if (this.highlightElt) {
-      this.highlightElt.parentElement.removeChild(this.highlightElt);
-      this.highlightElt = null;
+
+  highlightStar() {
+    this.highlight("&#x2606;");
+  }
+
+  removeAllHighlights() {
+    for (const h of this.highlightElts) {
+      h.parentElement.removeChild(h);
     }
+    this.highlightElts.splice(0);
   }
 }
 

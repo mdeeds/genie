@@ -211,14 +211,14 @@
 .highlight {
   position: absolute;;
   text-shadow: 0px 0px 10px #00f;
-  width: 50px;
-  height: 70px;
+  width: 80px;
+  height: 98px;
   padding: 0px;
   text-align: center;
   pointer-events: none;
 
   z-index: 2;
-  font-size: 50px;
+  font-size: 70px;
   color: #fff;
 
   animation-name: pulse;
