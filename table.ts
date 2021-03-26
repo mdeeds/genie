@@ -134,7 +134,7 @@ export class Table {
       }
     });
 
-    this.container.addEventListener('keypress', (ev) => {
+    this.container.addEventListener('keydown', (ev) => {
       this.handleKeyPress(ev);
     })
 
@@ -376,10 +376,7 @@ export class Table {
     }
   }
 
-
-
   private handleKeyPress(ev: KeyboardEvent) {
-    Log.info(`AAAAA: ${ev.key}`);
     switch (ev.key) {
       case 'Backspace':
       case 'Delete':
@@ -394,6 +391,5 @@ export class Table {
         this.forAllSelectedMagnets((m: Magnet) => { m.highlightCircle(); });
         break;
     }
-
   }
 }
