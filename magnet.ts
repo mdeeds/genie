@@ -73,7 +73,7 @@ export class Magnet {
   }
 
   highlightStar() {
-    this.highlight("&#x2606;");
+    this.highlight("&#x2b5c;");  // ("&#x2B26;");
   }
 
   removeAllHighlights() {

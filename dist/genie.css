@@ -121,6 +121,7 @@
 }
 
 /* ZIndex Class */
+/* 6 highlight */
 /* 5 indicator labels */
 /* 4 token hover */
 /* 3 token */
@@ -217,7 +218,7 @@
   text-align: center;
   pointer-events: none;
 
-  z-index: 2;
+  z-index: 6;
   font-size: 70px;
   color: #fff;
 
