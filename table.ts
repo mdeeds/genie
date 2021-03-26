@@ -1,3 +1,4 @@
+import { Log } from "./log";
 import { DocumentUtil } from "./documentUtil";
 import { LegalLocationModel } from "./legalLocationModel";
 import { Magnet } from "./magnet";
@@ -347,7 +348,7 @@ export class Table {
           this.dragging.getElement().classList.remove('dragging');
           this.dragging = null;
         }
-        break;
+        return;
     }
     DocumentUtil.moveToXY(token.getElement(), ev.clientX, ev.clientY);
   }
