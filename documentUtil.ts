@@ -15,4 +15,13 @@ export class DocumentUtil {
   static getBody() {
     return document.getElementsByTagName('body')[0];
   }
+
+  static intersects(a: DOMRect, b: DOMRect) {
+    if (a.left <= b.right && a.top <= b.bottom &&
+      a.right >= b.left && a.bottom >= b.top) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 }

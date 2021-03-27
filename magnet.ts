@@ -3,7 +3,7 @@ import { Token } from "./token";
 
 export class Magnet {
   element: HTMLSpanElement;
-  private highlightElt: HTMLSpanElement = null;
+  private highlightElts: HTMLSpanElement[] = [];
   private tokens: Token[] = [];
   constructor(element: HTMLSpanElement) {
     this.element = element;
@@ -13,18 +13,27 @@ export class Magnet {
     return this.tokens.length > 0;
   }
 
+  tokenValues(tokenIndex: Map<string, number>): Float32Array {
+    const result = new Float32Array(tokenIndex.size);
+    for (const t of this.tokens) {
+      const i = tokenIndex.get(t.getLabel());
+      result[i] = result[i] + 1;
+    }
+    return result;
+  }
+
   label(): string {
     if (this.tokens.length === 0) {
-      throw "Empt magnet";
+      throw "Empty magnet";
     }
-    return this.tokens[0].label;
+    return this.tokens[0].getLabel();
   }
 
   accepts(token: Token) {
     if (this.tokens.length === 0) {
       return true;
     }
-    if (this.tokens[0].label = token.label) {
+    if (this.tokens[0].getLabel() === token.getLabel()) {
       return true;
     }
     return false;
@@ -35,6 +44,10 @@ export class Magnet {
       throw "Wrong token.";
     }
     this.tokens.push(token);
+    let message: string = "";
+    for (const t of this.tokens) {
+      message += t.getLabel();
+    }
     token.magnet = this;
   }
 
@@ -43,26 +56,31 @@ export class Magnet {
   }
 
   hasHighlight() {
-    return !!this.highlightElt;
+    return this.highlightElts.length > 0;
   }
 
   highlight(html: string) {
-    this.removeHighlight();
-    this.highlightElt = document.createElement('span');
-    this.highlightElt.classList.add('highlight');
-    this.highlightElt.innerHTML = html;
-    this.element.parentElement.appendChild(this.highlightElt);
+    const highlightElt = document.createElement('span');
+    highlightElt.classList.add('highlight');
+    highlightElt.innerHTML = html;
+    this.element.parentElement.appendChild(highlightElt);
     DocumentUtil.moveToCenter(
-      this.highlightElt, this.element.getBoundingClientRect());
+      highlightElt, this.element.getBoundingClientRect());
+    this.highlightElts.push(highlightElt);
   }
   highlightCircle() {
     this.highlight("&#x25cb;");
   }
-  removeHighlight() {
-    if (this.highlightElt) {
-      this.highlightElt.parentElement.removeChild(this.highlightElt);
-      this.highlightElt = null;
+
+  highlightStar() {
+    this.highlight("&#x2b5c;");  // ("&#x2B26;");
+  }
+
+  removeAllHighlights() {
+    for (const h of this.highlightElts) {
+      h.parentElement.removeChild(h);
     }
+    this.highlightElts.splice(0);
   }
 }
 

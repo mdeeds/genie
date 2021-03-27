@@ -1,11 +1,17 @@
 import { Magnet } from "./magnet";
 
 export class Token {
-  label: string;
-  element: HTMLSpanElement;
+  private label: string;
+  private element: HTMLSpanElement;
   magnet: Magnet = null;
   constructor(label: string, element: HTMLSpanElement) {
     this.label = label;
     this.element = element;
+  }
+  getLabel() {
+    return this.label;
+  }
+  getElement() {
+    return this.element;
   }
 }

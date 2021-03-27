@@ -1,3 +1,4 @@
+import { Log } from "./log";
 import { DocumentUtil } from "./documentUtil";
 import { LegalLocationModel } from "./legalLocationModel";
 import { Magnet } from "./magnet";
@@ -74,6 +75,10 @@ class SelectBox {
   remove() {
     this.elt.parentElement.removeChild(this.elt);
   }
+
+  getBB() {
+    return this.elt.getBoundingClientRect();
+  }
 }
 
 export class Table {
@@ -109,6 +114,7 @@ export class Table {
     /***** Playing surface *****/
     this.container = document.createElement('div');
     this.container.classList.add('table');
+    this.container.tabIndex = 0;
     body.appendChild(this.container);
 
     this.container.addEventListener('mousedown', (ev) => {
@@ -127,6 +133,10 @@ export class Table {
         this.selectBox.active = false;
       }
     });
+
+    this.container.addEventListener('keydown', (ev) => {
+      this.handleKeyPress(ev);
+    })
 
 
     const playerIndicator =
@@ -157,10 +167,10 @@ export class Table {
   async initializeModels() {
     const sampleData = this.getStateData();
     this.legalSourceModel = await LegalLocationModel.make(
-      [[sampleData.length, 1]], this.magnets.length + this.tokenIndex.size);
+      [[sampleData.length, 1]], this.magnets.length);
 
     this.legalDestinationModel = await LegalLocationModel.make(
-      [[sampleData.length, 1]], this.magnets.length + this.tokenIndex.size);
+      [[sampleData.length, 1]], this.magnets.length);
     this.updateDisplay();
   }
 
@@ -173,8 +183,10 @@ export class Table {
     for (let i = 0; i < this.magnets.length; ++i) {
       const m = this.magnets[i];
       if (m.hasTokens()) {
-        const tokenIndex = this.tokenIndex.get(m.label());
-        result[i + tokenIndex * numMagnets] = 1.0;
+        const values = m.tokenValues(this.tokenIndex);
+        for (let tokenIndex = 0; tokenIndex < values.length; ++tokenIndex) {
+          result[i * numTokens + tokenIndex] = values[tokenIndex];
+        }
       }
     }
     for (let i = 0; i < numIndicators; ++i) {
@@ -191,53 +203,50 @@ export class Table {
     return sourcePositions * destinationPositions;
   }
 
-  private updateDisplay() {
+  private async updateDisplay() {
     if (!this.display) {
       return;
     }
     const state = this.getStateData();
     this.display.innerText = `${state}`;
     if (this.legalSourceModel) {
-      this.legalSourceModel.getLegalLocations(state).then((sources) => {
-        this.highlightSources(sources);
-        this.display.innerText += "\n"
-        sources.forEach(element => {
-          this.display.innerText += element.toFixed(2) + ",";
-        });
+      const sources = await this.legalSourceModel.getLegalLocations(state)
+      const destinations = await this.legalDestinationModel.getLegalLocations(state);
 
-      })
+      this.highlightSourcesAndDestinations(
+        sources, destinations);
+      this.display.innerText += "\n"
+      for (const element of sources) {
+        this.display.innerText += element.toFixed(2) + ",";
+      }
+      this.display.innerText += "\n"
+      for (const element of destinations) {
+        this.display.innerText += element.toFixed(2) + ",";
+      }
     }
-    // if (this.legalDestinationModel) {
-    //   this.legalDestinationModel.getLegalLocations(state).then(
-    //     (destinations) => {
-    //       this.highlightDestinations(destinations);
-    //       this.display.innerText += "\n"
-    //       destinations.forEach(element => {
-    //         this.display.innerText += element.toFixed(2) + ",";
-    //       });
-
-    //     })
-    // }
   }
 
-  private highlightLocations(locations: Float32Array,
-    html: string) {
+
+  private applyHighValueMagnets(locations: Float32Array,
+    f: Function) {
+    console.assert(locations.length === this.magnets.length);
     for (let i = 0; i < locations.length; ++i) {
-      if (i >= this.magnets.length) {
-        // TODO: Remove this when all locations are magnets.
-        break;
-      }
       const magnet = this.magnets[i];
       if (locations[i] > 0.5) {
-        magnet.highlight(html);
-      } else {
-        magnet.removeHighlight();
+        f(magnet);
       }
     }
   }
 
-  private highlightSources(sources: Float32Array) {
-    this.highlightLocations(sources, "&#x2606;")
+  private highlightSourcesAndDestinations(
+    sources: Float32Array, destinations: Float32Array) {
+    for (const m of this.magnets) {
+      m.removeAllHighlights();
+    }
+    this.applyHighValueMagnets(sources,
+      (m: Magnet) => { m.highlightStar(); });
+    this.applyHighValueMagnets(destinations,
+      (m: Magnet) => { m.highlightCircle(); });
   }
 
   private addBag(label: string, count: number, x: number, y: number) {
@@ -296,24 +305,15 @@ export class Table {
     this.magnets.push(m);
   }
 
-  private intersects(a: DOMRect, b: DOMRect) {
-    if (a.left <= b.right && a.top <= b.bottom &&
-      a.right >= b.left && a.bottom >= b.top) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
   private checkMagnets(token: Token) {
-    const tokenBB = token.element.getBoundingClientRect();
+    const tokenBB = token.getElement().getBoundingClientRect();
     for (const m of this.magnets) {
       if (!m.accepts(token)) {
         continue;
       }
       const magnetBB = m.element.getBoundingClientRect();
-      if (this.intersects(magnetBB, tokenBB)) {
-        DocumentUtil.moveToCenter(token.element, magnetBB);
+      if (DocumentUtil.intersects(magnetBB, tokenBB)) {
+        DocumentUtil.moveToCenter(token.getElement(), magnetBB);
         m.add(token);
         break;
       }
@@ -337,28 +337,59 @@ export class Table {
         } else {
           this.dragging = token;
         }
-        this.dragging.element.classList.add('dragging');
+        this.dragging.getElement().classList.add('dragging');
         break;
       case 'mouseup':
         this.checkMagnets(token);
         if (this.dragging) {
-          this.dragging.element.classList.remove('dragging');
+          this.dragging.getElement().classList.remove('dragging');
           this.dragging = null;
         }
-        break;
+        return;
     }
-    DocumentUtil.moveToXY(token.element, ev.clientX, ev.clientY);
+    DocumentUtil.moveToXY(token.getElement(), ev.clientX, ev.clientY);
   }
   private handleMagnetMouseEvent(magnet: Magnet, ev: MouseEvent) {
     ev.preventDefault();
     switch (ev.type) {
       case 'click':
         if (magnet.hasHighlight()) {
-          magnet.removeHighlight();
+          magnet.removeAllHighlights();
         } else {
           magnet.highlightCircle();
         }
         return;
+    }
+  }
+
+  // Applies f to all selected magnets.
+  private forAllSelectedMagnets(f: Function) {
+    const selectionBB = this.selectBox.getBB();
+    if (!selectionBB) {
+      return;
+    }
+    for (const m of this.magnets) {
+      const bb = m.element.getBoundingClientRect();
+      if (DocumentUtil.intersects(bb, selectionBB)) {
+        f(m);
+      }
+    }
+  }
+
+  private handleKeyPress(ev: KeyboardEvent) {
+    switch (ev.key) {
+      case 'Backspace':
+      case 'Delete':
+        this.forAllSelectedMagnets((m: Magnet) => { m.removeAllHighlights(); });
+        break;
+      case 's':
+        this.forAllSelectedMagnets((m: Magnet) => { m.removeAllHighlights(); });
+        this.forAllSelectedMagnets((m: Magnet) => { m.highlightStar(); });
+        break;
+      case 'd':
+        this.forAllSelectedMagnets((m: Magnet) => { m.removeAllHighlights(); });
+        this.forAllSelectedMagnets((m: Magnet) => { m.highlightCircle(); });
+        break;
     }
   }
 }
