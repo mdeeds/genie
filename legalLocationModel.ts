@@ -1,4 +1,6 @@
 import * as tf from '@tensorflow/tfjs';
+import { callbacks } from '@tensorflow/tfjs';
+//import * as tf from '@tensorflow/tfjs-node';
 
 // Creates a model intended for determining which locations are legal.
 // This can be used for determining legal sources or legal destinations.
@@ -7,9 +9,10 @@ export class LegalLocationModel {
   private locationSize: number;
   private stateSize: number;
   private stateShapes: tf.Shape[];
+  public epochs: number;
   // Builds a model which can be trained to identify where pieces can 
   // be moved from.
-  private constructor(stateShapes: tf.Shape[], locationSize: number) {
+  private constructor(stateShapes: tf.Shape[], locationSize: number, lr: number) {
     this.locationSize = locationSize;
     this.stateShapes = stateShapes;
     let stateSize = 0;
@@ -43,7 +46,7 @@ export class LegalLocationModel {
           }).apply(input) as tf.SymbolicTensor;
           convLayer = tf.layers.conv2d({
             kernelSize: d, filters: 1, padding: 'same',
-            activation: 'hardSigmoid'
+            activation: 'sigmoid'
           }).apply(convLayer) as tf.SymbolicTensor;
           console.log(`AAAAA Conv shape: ${convLayer.shape}`);
           convLayers.push(
@@ -72,7 +75,7 @@ export class LegalLocationModel {
     if (flat.shape[1] != locationSize) {
       o = tf.layers.dense({
         units: locationSize,
-        activation: 'sigmoid'
+        //activation: 'sigmoid'
       }).apply(flat) as tf.SymbolicTensor;
     }
 
@@ -84,14 +87,14 @@ export class LegalLocationModel {
       outputs: weighted_o
     });
 
-    let opt = tf.train.adam(0.001);
+    let opt = tf.train.adam(lr);
 
     this.model.compile({
-      optimizer: opt, loss: tf.losses.meanSquaredError,
-      metrics: ['accuracy']
-    });  //loss: tf.losses.sigmoidCrossEntropy
+      optimizer: opt, loss: tf.losses.meanSquaredError, // tf.losses.sigmoidCrossEntropy tf.losses.meanSquaredError
+      metrics: ['accuracy', 'binaryAccuracy', 'categoricalAccuracy']
+    });
 
-    this.model.summary()
+    //this.model.summary()
   }
 
   getModel() {
@@ -99,10 +102,10 @@ export class LegalLocationModel {
   }
 
   static make(stateShapes: tf.Shape[],
-    locationSize: number): Promise<LegalLocationModel> {
+    locationSize: number, lr: number = 0.01): Promise<LegalLocationModel> {
     return new Promise((resolve, reject) => {
       tf.setBackend('cpu').then(() => {
-        resolve(new LegalLocationModel(stateShapes, locationSize));
+        resolve(new LegalLocationModel(stateShapes, locationSize, lr));
       });
     });
   }
@@ -153,13 +156,24 @@ export class LegalLocationModel {
     const confidence = tf.tensor(confidenceLocations, [batchSize, this.locationSize]);
     const y = tf.mul(legal, confidence);
     let history: tf.History = null;
-    for (let iteration = 0; iteration < 100; ++iteration) {
-      history = await this.model.fit([x, confidence], y, { epochs: 5 });
-      if (history.history['loss'][0] < history.history['loss'][4]) {
-        // Loss is increasing, so we have stopped learning.
-        break;
-      }
+
+    function myCallbacks() {
+      return tf.callbacks.earlyStopping({ monitor: 'loss', minDelta: 1E-7 })
     }
+
+    let t0 = Date.now();
+    history = await this.model.fit([x, confidence], y, { epochs: 5000, callbacks: myCallbacks() }); // 
+    let fitTime = Date.now() - t0;
+    this.epochs = Math.max(...history.epoch) + 1;
+    //console.log(`It took ${fitTime} ms for ${this.epochs} epochs.`);
+
+    // for (let iteration = 0; iteration < 100; ++iteration) {
+    //   history = await this.model.fit([x, confidence], y, { epochs: 5 });
+    //   if (history.history['loss'][0] < history.history['loss'][4]) {
+    //     // Loss is increasing, so we have stopped learning.
+    //     break;
+    //   }
+    // }
     x.dispose();
     legal.dispose();
     confidence.dispose();
