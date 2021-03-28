@@ -114,6 +114,12 @@ export class Table {
 
     const body = DocumentUtil.getBody();
 
+    /*** Confirm Button ***/
+    const done = document.createElement('span');
+    done.innerText = "Confirm & Next Player";
+    done.classList.add('button');
+    body.appendChild(done);
+
     /***** Playing surface *****/
     this.container = document.createElement('div');
     this.container.classList.add('table');
@@ -143,6 +149,10 @@ export class Table {
 
     const playerIndicator =
       this.addLabelIndicator(this.container, ['X to play', 'O to play'], 0, 0);
+    done.addEventListener('click', (ev) => {
+      this.setTrainingData();
+      playerIndicator.increment();
+    })
 
     this.addBag("X", 5, 50, 100);
     this.addBag("O", 4, 50, 200);
@@ -241,7 +251,9 @@ export class Table {
     }
 
     this.legalDestinationModel.setData(state, legalDestinations);
+    this.legalDestinationModel.trainAsync();
     this.legalSourceModel.setData(state, legalSources);
+    this.legalSourceModel.trainAsync();
   }
 
   private applyHighValueMagnets(locations: Float32Array,
@@ -409,6 +421,5 @@ export class Table {
         this.forAllSelectedMagnets((m: Magnet) => { m.highlightCircle(); });
         break;
     }
-    this.setTrainingData();
   }
 }

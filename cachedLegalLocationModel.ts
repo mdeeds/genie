@@ -14,6 +14,8 @@ import { LegalLocationModel } from "./legalLocationModel";
 export class CachedLegalLocationModel {
   private base: LegalLocationModel;
   private cache: VMap<Float32Array> = new VMap();
+  private trainInProgress: boolean = false;
+  private trainPending: boolean = false;
 
   private constructor(base: LegalLocationModel) {
     this.base = base;
@@ -49,12 +51,27 @@ export class CachedLegalLocationModel {
         reject("No data.");
       });
     }
+    if (this.trainInProgress) {
+      // We are already training, so queue up another training round
+      // after this one finishes.
+      this.trainPending = true;
+      return;
+    }
     const states: Float32Array[] = [];
     const legalLocations: Float32Array[] = [];
     for (const [k, v] of this.cache.entries()) {
       states.push(k);
       legalLocations.push(v);
     }
-    return this.base.trainAsync(states, legalLocations);
+    return new Promise<tf.History>((resolve, reject) => {
+      this.base.trainAsync(states, legalLocations).then((history) => {
+        this.trainInProgress = false;
+        if (this.trainPending) {
+          this.trainPending = false;
+          this.trainAsync();
+        }
+        resolve(history);
+      })
+    })
   }
 }
