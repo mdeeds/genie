@@ -1,5 +1,6 @@
 import { activation } from "@tensorflow/tfjs-layers/dist/exports_layers";
 import { LegalLocationModel } from "./legalLocationModel";
+import { Log } from "./log";
 import { ModelUtil } from "./modelUtil";
 
 async function testBasic() {
@@ -185,6 +186,7 @@ async function test5val100() {
 }
 
 async function testItterative() {
+  Log.info('Start: testIterative.');
   // to simplify just a little, I'm not counting the token bags
   // state vecor is 2 types of tokens in 9 spots = 18 features in length
   // legal locations vector is the 9 spots
@@ -232,8 +234,11 @@ async function testItterative() {
 //    that one wrong example fits worse than the other nine.
 
 
-//testBasic();
-// testWeighted();
-// test5val100();
-testItterative();
+async function run() {
+  await testBasic();
+  // testWeighted();
+  // test5val100();
+  await testItterative();
+}
 
+run();

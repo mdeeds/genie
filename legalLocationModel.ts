@@ -7,7 +7,9 @@ export class LegalLocationModel {
   private model: tf.LayersModel;
   private locationSize: number;
   private stateSize: number;
-  private stateShapes: tf.Shape[];
+  private stateShapes: tf.Shape[] = [];
+  private stateOffsets: number[] = [];
+  private stateSizes: number[] = [];
   // Builds a model which can be trained to identify where pieces can 
   // be moved from.
   private constructor(stateShapes: tf.Shape[], locationSize: number) {
@@ -15,10 +17,12 @@ export class LegalLocationModel {
     this.stateShapes = stateShapes;
     let stateSize = 0;
     for (const s of stateShapes) {
+      this.stateOffsets.push(stateSize);
       let product = 1;
       for (const d of s) {
         product *= d;
       }
+      this.stateSizes.push(product);
       stateSize += product;
     }
     this.stateSize = stateSize;
@@ -47,22 +51,26 @@ export class LegalLocationModel {
             activation: 'hardSigmoid'
           }).apply(convLayer) as tf.SymbolicTensor;
           Log.debug(`Conv shape: ${convLayer.shape}`);
-          convLayers.push(
-            tf.layers.flatten().apply(convLayer) as tf.SymbolicTensor);
+          convLayers.push(this.makeFlat(convLayer));
         }
       } else {
-        nonConvLayers.push(
-          tf.layers.flatten().apply(input) as tf.SymbolicTensor);
+        const f = this.makeFlat(input);
+        const d = tf.layers.dense({
+          units: f.shape[1], activation: 'relu'
+        }).apply(f) as tf.SymbolicTensor;
+        nonConvLayers.push(d);
       }
     }
 
     const flatInputs: tf.SymbolicTensor[] = [];
     for (const input of inputs) {
-      flatInputs.push(tf.layers.flatten().apply(input) as tf.SymbolicTensor);
+      flatInputs.push(this.makeFlat(input));
     }
-
+    Log.debug(`nonCovCount: ${nonConvLayers.length}`);
+    Log.debug(`convCount: ${convLayers.length}`);
     const layerArray = [...nonConvLayers, ...convLayers];
     let flat: tf.SymbolicTensor;
+    Log.debug(`layerLength: ${layerArray.length}`);
     if (layerArray.length === 1) {
       flat = layerArray[0]
     } else {
@@ -76,6 +84,7 @@ export class LegalLocationModel {
         activation: 'sigmoid'
       }).apply(flat) as tf.SymbolicTensor;
     }
+    Log.debug(`o shape: ${o.shape}`);
 
     const inputWeight = tf.input({ shape: [locationSize] });
     const weighted_o = tf.layers.multiply()
@@ -85,7 +94,7 @@ export class LegalLocationModel {
       outputs: weighted_o
     });
 
-    let opt = tf.train.adam(0.001);
+    let opt = tf.train.adam(0.01);
 
     this.model.compile({
       optimizer: opt, loss: tf.losses.meanSquaredError,
@@ -93,6 +102,14 @@ export class LegalLocationModel {
     });  //loss: tf.losses.sigmoidCrossEntropy
 
     this.model.summary(null, null, Log.debug);
+  }
+
+  private makeFlat(x: tf.SymbolicTensor): tf.SymbolicTensor {
+    if (x.shape.length < 3) {
+      return x;
+    } else {
+      return tf.layers.flatten().apply(x) as tf.SymbolicTensor;
+    }
   }
 
   getModel() {
@@ -149,19 +166,37 @@ export class LegalLocationModel {
       `Got ${states[0].length}, expected ${this.stateSize}`;
     }
 
-    const x = tf.tensor(states, [batchSize, ...this.stateShapes[0]]);
+    const inputTensors: tf.Tensor[] = [];
+    for (let shapeIndex = 0;
+      shapeIndex < this.stateOffsets.length;
+      ++shapeIndex) {
+      const flatData: number[] = [];
+      for (let exampleIndex = 0; exampleIndex < states.length; ++exampleIndex) {
+        const slice = states[exampleIndex].slice(
+          this.stateOffsets[shapeIndex],
+          this.stateOffsets[shapeIndex] + this.stateSizes[shapeIndex]);
+        flatData.push(...slice);
+      }
+      inputTensors.push(
+        tf.tensor(flatData,
+          [batchSize, ...this.stateShapes[shapeIndex]]));
+    }
+
     const legal = tf.tensor(legalLocations, [batchSize, this.locationSize]);
     const confidence = tf.tensor(confidenceLocations, [batchSize, this.locationSize]);
     const y = tf.mul(legal, confidence);
     let history: tf.History = null;
     for (let iteration = 0; iteration < 100; ++iteration) {
-      history = await this.model.fit([x, confidence], y, { epochs: 5 });
+      history = await this.model.fit(
+        [...inputTensors, confidence], y, { epochs: 5 });
       if (history.history['loss'][0] < history.history['loss'][4]) {
         // Loss is increasing, so we have stopped learning.
         break;
       }
     }
-    x.dispose();
+    for (const x of inputTensors) {
+      x.dispose();
+    }
     legal.dispose();
     confidence.dispose();
     y.dispose();
