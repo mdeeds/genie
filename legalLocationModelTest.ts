@@ -3,6 +3,7 @@ import { Log } from "./log";
 import { ModelUtil } from "./modelUtil";
 
 async function testBasic() {
+  Log.info('Begin testBasic');
   const llm = await LegalLocationModel.make([[2]], 2);
 
   const states: Float32Array[] = [];
@@ -20,7 +21,7 @@ async function testBasic() {
   const history = await llm.trainAsync(states, legalLocations);
 
   const lossArray = history.history['loss'];
-  console.log(lossArray);
+  console.log(lossArray.slice(-10));
   console.assert(lossArray[lossArray.length - 1] < 0.02, "testBasic");
 }
 
@@ -53,6 +54,7 @@ async function testWeighted() {
   const lossArray = history.history['loss'];
   console.log(lossArray);
   console.assert(lossArray[lossArray.length - 1] < 0.02, "testWeighted");
+  console.log('Done testBasic');
 }
 
 function percentile(a: number[], percentile: number): number {

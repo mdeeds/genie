@@ -11,7 +11,7 @@ async function testBasic() {
   const history = await cllm.trainAsync();
 
   const lossArray = history.history['loss'];
-  console.log(lossArray);
+  console.log(lossArray.slice(-10));
   console.assert(lossArray[lossArray.length - 1] < 0.02, "testBasic");
 }
 
