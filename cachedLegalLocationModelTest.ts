@@ -3,10 +3,10 @@ import { CachedLegalLocationModel } from "./cachedLegalLocationModel";
 async function testBasic() {
   const cllm = await CachedLegalLocationModel.make([[2]], 2);
 
-  cllm.addData(new Float32Array([0, 0]), new Float32Array([0, 1]));
-  cllm.addData(new Float32Array([0, 1]), new Float32Array([1, 0]));
-  cllm.addData(new Float32Array([1, 0]), new Float32Array([0, 1]));
-  cllm.addData(new Float32Array([1, 1]), new Float32Array([1, 0]));
+  cllm.setData(new Float32Array([0, 0]), new Float32Array([0, 1]));
+  cllm.setData(new Float32Array([0, 1]), new Float32Array([1, 0]));
+  cllm.setData(new Float32Array([1, 0]), new Float32Array([0, 1]));
+  cllm.setData(new Float32Array([1, 1]), new Float32Array([1, 0]));
 
   const history = await cllm.trainAsync();
 

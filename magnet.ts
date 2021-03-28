@@ -4,6 +4,7 @@ import { Token } from "./token";
 export class Magnet {
   element: HTMLSpanElement;
   private highlightElts: HTMLSpanElement[] = [];
+  private highlightValues: number[] = [];
   private tokens: Token[] = [];
   constructor(element: HTMLSpanElement) {
     this.element = element;
@@ -20,6 +21,10 @@ export class Magnet {
       result[i] = result[i] + 1;
     }
     return result;
+  }
+
+  getHighlightValues() {
+    return this.highlightValues;
   }
 
   label(): string {
@@ -59,7 +64,7 @@ export class Magnet {
     return this.highlightElts.length > 0;
   }
 
-  highlight(html: string) {
+  highlight(html: string, value: number) {
     const highlightElt = document.createElement('span');
     highlightElt.classList.add('highlight');
     highlightElt.innerHTML = html;
@@ -67,13 +72,14 @@ export class Magnet {
     DocumentUtil.moveToCenter(
       highlightElt, this.element.getBoundingClientRect());
     this.highlightElts.push(highlightElt);
+    this.highlightValues.push(value);
   }
   highlightCircle() {
-    this.highlight("&#x25cb;");
+    this.highlight("&#x25cb;", 1);
   }
 
   highlightStar() {
-    this.highlight("&#x2b5c;");  // ("&#x2B26;");
+    this.highlight("&#x2b5c;", 0);  // ("&#x2B26;");
   }
 
   removeAllHighlights() {
@@ -81,10 +87,7 @@ export class Magnet {
       h.parentElement.removeChild(h);
     }
     this.highlightElts.splice(0);
+    this.highlightValues.splice(0);
   }
-}
-
-class Bag extends Magnet {
-
 }
 

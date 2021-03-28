@@ -1,8 +1,9 @@
 import { Log } from "./log";
 import { DocumentUtil } from "./documentUtil";
-import { LegalLocationModel } from "./legalLocationModel";
 import { Magnet } from "./magnet";
 import { Token } from "./token";
+import { CachedLegalLocationModel } from "./cachedLegalLocationModel";
+import { LegalLocationModel } from "./legalLocationModel";
 
 class LabelIndicator {
   labels: string[];
@@ -86,8 +87,8 @@ class SelectBox {
 }
 
 export class Table {
-  private legalSourceModel: LegalLocationModel;
-  private legalDestinationModel: LegalLocationModel;
+  private legalSourceModel: CachedLegalLocationModel;
+  private legalDestinationModel: CachedLegalLocationModel;
 
   private container: HTMLDivElement;
   private display: HTMLDivElement;
@@ -170,10 +171,10 @@ export class Table {
 
   async initializeModels() {
     const sampleData = this.getStateData();
-    this.legalSourceModel = await LegalLocationModel.make(
+    this.legalSourceModel = await CachedLegalLocationModel.make(
       [[sampleData.length, 1]], this.magnets.length);
 
-    this.legalDestinationModel = await LegalLocationModel.make(
+    this.legalDestinationModel = await CachedLegalLocationModel.make(
       [[sampleData.length, 1]], this.magnets.length);
     this.updateDisplay();
   }
@@ -230,6 +231,25 @@ export class Table {
     }
   }
 
+  private setTrainingData() {
+    const state = this.getStateData();
+    const legalSources = new Float32Array(this.magnets.length);
+    const legalDestinations = new Float32Array(this.magnets.length);
+
+    for (let i = 0; i < this.magnets.length; ++i) {
+      const magnet = this.magnets[i];
+      for (const v of magnet.getHighlightValues()) {
+        if (v === 0) {
+          legalSources[i] = 1;
+        } else if (v === 1) {
+          legalDestinations[i] = 1;
+        }
+      }
+    }
+
+    this.legalDestinationModel.setData(state, legalDestinations);
+    this.legalSourceModel.setData(state, legalSources);
+  }
 
   private applyHighValueMagnets(locations: Float32Array,
     f: Function) {
@@ -395,5 +415,6 @@ export class Table {
         this.forAllSelectedMagnets((m: Magnet) => { m.highlightCircle(); });
         break;
     }
+    this.setTrainingData();
   }
 }

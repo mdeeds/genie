@@ -39,7 +39,7 @@ export class CachedLegalLocationModel {
     }
   }
 
-  addData(state: Float32Array, locations: Float32Array) {
+  setData(state: Float32Array, locations: Float32Array) {
     this.cache.set(state, locations);
   }
 
