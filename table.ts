@@ -108,6 +108,8 @@ export class Table {
   // object from the magnets.
   private tokenIndex: Map<string, number>;
 
+  private tokens: Token[] = [];
+
   private selectBox: SelectBox;
   constructor() {
     this.tokenIndex = new Map<string, number>();
@@ -161,6 +163,8 @@ export class Table {
         this.addMagnet(i * 50 + 200, j * 50 + 100);
       }
     }
+    this.checkMagnets();
+
     this.addLabelIndicator(this.container,
       ["Game in progress", "X won", "O won", "Cats Game"], 300, 0);
 
@@ -284,8 +288,7 @@ export class Table {
     }
     this.addMagnet(x, y);
     for (let i = 0; i < count; ++i) {
-      const token = this.makeToken(label, x, y);
-      this.checkMagnets(token);
+      this.makeToken(label, x, y);
     }
   }
 
@@ -319,6 +322,7 @@ export class Table {
       this.handleMouseEvent(t, me);
     });
     this.container.appendChild(token);
+    this.tokens.push(t);
     return t;
   }
 
@@ -335,17 +339,24 @@ export class Table {
     this.magnets.push(m);
   }
 
-  private checkMagnets(token: Token) {
-    const tokenBB = token.getElement().getBoundingClientRect();
-    for (const m of this.magnets) {
-      if (!m.accepts(token)) {
-        continue;
-      }
-      const magnetBB = m.element.getBoundingClientRect();
-      if (DocumentUtil.intersects(magnetBB, tokenBB)) {
-        DocumentUtil.moveToCenter(token.getElement(), magnetBB);
-        m.add(token);
-        break;
+  private checkMagnets() {
+    for (const magnet of this.magnets) {
+      magnet.removeAllTokens();
+    }
+    for (const token of this.tokens) {
+      token.magnet = null;
+      const tokenBB = token.getElement().getBoundingClientRect();
+      token.getElement().classList.remove('dragging');
+      for (const m of this.magnets) {
+        if (!m.accepts(token)) {
+          continue;
+        }
+        const magnetBB = m.element.getBoundingClientRect();
+        if (DocumentUtil.intersects(magnetBB, tokenBB)) {
+          DocumentUtil.moveToCenter(token.getElement(), magnetBB);
+          m.add(token);
+          break;
+        }
       }
     }
     this.updateDisplay();
@@ -370,7 +381,7 @@ export class Table {
         this.dragging.getElement().classList.add('dragging');
         break;
       case 'mouseup':
-        this.checkMagnets(token);
+        this.checkMagnets();
         if (this.dragging) {
           this.dragging.getElement().classList.remove('dragging');
           this.dragging = null;

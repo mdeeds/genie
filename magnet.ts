@@ -23,6 +23,13 @@ export class Magnet {
     return result;
   }
 
+  removeAllTokens() {
+    for (const token of this.tokens) {
+      token.magnet = null;
+    }
+    this.tokens.splice(0);
+  }
+
   getHighlightValues() {
     return this.highlightValues;
   }
@@ -47,6 +54,10 @@ export class Magnet {
   add(token: Token) {
     if (!this.accepts(token)) {
       throw "Wrong token.";
+    }
+    if (this.tokens.indexOf(token) >= 0) {
+      // We already have this token.
+      return;
     }
     this.tokens.push(token);
     let message: string = "";
