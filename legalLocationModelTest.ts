@@ -1,4 +1,3 @@
-import { activation } from "@tensorflow/tfjs-layers/dist/exports_layers";
 import { LegalLocationModel } from "./legalLocationModel";
 import { Log } from "./log";
 import { ModelUtil } from "./modelUtil";
@@ -99,6 +98,11 @@ async function validate(llm: LegalLocationModel, states: Float32Array[], legalLo
     //   console.log(`actual: ${sources}`);
     //   console.log(`expect: ${ll}`);
     // }
+    // if (i < 10) {
+    //   console.log(sources)
+    //   console.log(states[i])
+    //   console.log(legalLocations[i])
+    // }
     console.assert(sources.length == ll.length, "Length mismatch.");
     for (let j = 0; j < sources.length; ++j) {
       const delta = (Math.abs(ll[j] - sources[j]));
@@ -191,18 +195,23 @@ async function testItterative() {
   // state vecor is 2 types of tokens in 9 spots = 18 features in length
   // legal locations vector is the 9 spots
 
-  const llm = await LegalLocationModel.make([[3, 3, 2]], 9);
   const states: Float32Array[] = [];
   const legalLocations: Float32Array[] = [];
   RandomExamples(states, legalLocations, 10000);
 
-  const trainingStates: Float32Array[] = [];
-  const trainningLegalLocations: Float32Array[] = [];
   let right = 0
   let wrong = 0
   let unsure = 0;
+
+  //for (let lr = 0.1; lr < 10; lr *= 1.01) {
+  let lr = 0.01;
+  const llm = await LegalLocationModel.make([[3, 3, 2]], 9, lr);
+  const trainingStates: Float32Array[] = [];
+  const trainningLegalLocations: Float32Array[] = [];
+
+
+  // find the most unclear example
   for (let i = 0; i < 100; i++) {
-    // find the most unclear example
     var confidences = await confidence(llm, states);
     let lowest = Math.min(...confidences)
     let index = confidences.indexOf(lowest);
@@ -212,6 +221,7 @@ async function testItterative() {
     trainningLegalLocations.push(legalLocations[index]);
     states.splice(index, 1);
     legalLocations.splice(index, 1);
+    confidences.splice(index, 1);
 
     // train with the most unsure
     const history = await llm.trainAsync(
@@ -219,13 +229,13 @@ async function testItterative() {
 
     // validate model
     ([right, unsure, wrong] = await validate(llm, states, legalLocations));
+    if (unsure == 0 && wrong == 0) {
+      break;
+    }
   }
-
-
   console.assert(wrong === 0, "Has misclasifications");
   console.assert(right > unsure, "Poor clasification");
 }
-
 // TODO: Add tests for:
 // 1) Use TTT game, train on ~5 examples, validate on ~100 different states.
 //    We don't need 100% accuracy on validation, but the wrong ones need to be

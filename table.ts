@@ -16,6 +16,10 @@ class LabelIndicator {
     this.element.style.top = `${y}px`;
     container.appendChild(this.element);
 
+    this.element.addEventListener('click', (ev) => {
+      this.increment();
+    });
+
     this.labels = labels;
     this.setIndex(0);
   }
