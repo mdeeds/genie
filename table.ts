@@ -9,8 +9,11 @@ class LabelIndicator {
   labels: string[];
   element: HTMLSpanElement;
   index: number;
+  changeCallback: Function;
   constructor(container: HTMLDivElement,
-    labels: string[], x: number, y: number) {
+    labels: string[], x: number, y: number,
+    changeCallback: Function) {
+    this.changeCallback = changeCallback;
     this.element = document.createElement('span');
     this.element.classList.add('labelIndicator');
     this.element.style.left = `${x}px`;
@@ -19,6 +22,7 @@ class LabelIndicator {
 
     this.element.addEventListener('click', (ev) => {
       this.increment();
+      this.changeCallback();
     });
 
     this.labels = labels;
@@ -110,12 +114,6 @@ export class Table {
 
     const body = DocumentUtil.getBody();
 
-    /***** Player indicator *****/
-    const doneButton = document.createElement('span');
-    doneButton.classList.add('button');
-    doneButton.innerText = 'Next player';
-    body.appendChild(doneButton);
-
     /***** Playing surface *****/
     this.container = document.createElement('div');
     this.container.classList.add('table');
@@ -143,13 +141,8 @@ export class Table {
       this.handleKeyPress(ev);
     })
 
-
     const playerIndicator =
       this.addLabelIndicator(this.container, ['X to play', 'O to play'], 0, 0);
-    doneButton.addEventListener('click', (ev) => {
-      playerIndicator.increment();
-      this.updateDisplay();
-    })
 
     this.addBag("X", 5, 50, 100);
     this.addBag("O", 4, 50, 200);
@@ -285,7 +278,8 @@ export class Table {
   }
 
   private addLabelIndicator(container, labels: string[], x: number, y: number) {
-    const i = new LabelIndicator(container, labels, x, y);
+    const i = new LabelIndicator(container, labels, x, y,
+      () => { this.updateDisplay(); });
     this.indicators.push(i);
     return i;
   }
