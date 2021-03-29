@@ -364,6 +364,9 @@ export class Table {
 
   private dragging: Token;
   private handleMouseEvent(token: Token, ev: MouseEvent) {
+    if (this.selectBox.active) {
+      return;
+    }
     ev.stopPropagation();
     switch (ev.type) {
       case 'mousemove':
@@ -391,6 +394,9 @@ export class Table {
     DocumentUtil.moveToXY(token.getElement(), ev.clientX, ev.clientY);
   }
   private handleMagnetMouseEvent(magnet: Magnet, ev: MouseEvent) {
+    if (this.selectBox.active) {
+      return;
+    }
     ev.preventDefault();
     switch (ev.type) {
       case 'click':
