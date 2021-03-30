@@ -11,6 +11,7 @@ export class LegalLocationModel {
   private stateOffsets: number[] = [];
   private stateSizes: number[] = [];
   public epochs: number;
+  private modelLevel = 1;
   // Builds a model which can be trained to identify where pieces can 
   // be moved from.
   private constructor(stateShapes: tf.Shape[], locationSize: number, lr: number) {
@@ -27,12 +28,23 @@ export class LegalLocationModel {
       stateSize += product;
     }
     this.stateSize = stateSize;
-    const inputs: tf.SymbolicTensor[] = [];
 
+    this.buildModel(stateShapes, locationSize, lr);
+
+
+  }
+
+  private buildModel(stateShapes: tf.Shape[], locationSize: number, lr: number = 0.01) {
+    const inputs: tf.SymbolicTensor[] = [];
     for (const shape of stateShapes) {
       Log.debug(`input: ${shape}`);
       inputs.push(tf.input({ shape: shape }));
     }
+    const numberOfLayers = Math.min(Math.ceil(this.modelLevel / 9), 3);
+    const numberOfFilters = this.modelLevel;
+    Log.debug(`numberOfLayers: ${numberOfLayers}`);
+    Log.debug(`numberOfFilters: ${numberOfFilters}`);
+
     const convLayers: tf.SymbolicTensor[] = [];
     const nonConvLayers: tf.SymbolicTensor[] = [];
     for (const input of inputs) {
@@ -40,24 +52,30 @@ export class LegalLocationModel {
       if (input.shape.length === 4 &&
         (input.shape[1] > 1 || input.shape[2] > 1)) {
         const smallerDim = Math.min(input.shape[1], input.shape[2]);
+        const kernelSize = Math.ceil(this.modelLevel / 3) % smallerDim + 1;
+        Log.debug(`kernelSize: ${kernelSize}`);
         Log.debug(`Smaller dim: ${smallerDim}`);
         // for (let d = 1; d <= smallerDim; ++d) {
+        var x = input;
         for (const d of [1]) {
-          var convLayer = tf.layers.conv2d({
-            kernelSize: smallerDim, filters: smallerDim * smallerDim, padding: 'same',
-            activation: 'relu',
-          }).apply(input) as tf.SymbolicTensor;
-          convLayer = tf.layers.conv2d({
+          for (var l = 0; l < numberOfLayers; l++) {
+            var x = tf.layers.conv2d({
+              kernelSize: kernelSize, filters: numberOfFilters,
+              padding: 'same',
+              activation: 'relu',
+            }).apply(x) as tf.SymbolicTensor;
+          }
+          x = tf.layers.conv2d({
             kernelSize: d, filters: 1, padding: 'same',
             activation: 'sigmoid'
-          }).apply(convLayer) as tf.SymbolicTensor;
-          Log.debug(`Conv shape: ${convLayer.shape}`);
-          convLayers.push(this.makeFlat(convLayer));
+          }).apply(x) as tf.SymbolicTensor;
+          Log.debug(`Conv shape: ${x.shape}`);
+          convLayers.push(this.makeFlat(x));
         }
       } else {
         const f = this.makeFlat(input);
         const d = tf.layers.dense({
-          units: f.shape[1], activation: 'relu'
+          units: this.modelLevel, activation: 'relu' //units: f.shape[1], activation: 'relu'
         }).apply(f) as tf.SymbolicTensor;
         nonConvLayers.push(d);
       }
@@ -73,7 +91,7 @@ export class LegalLocationModel {
     let flat: tf.SymbolicTensor;
     Log.debug(`layerLength: ${layerArray.length}`);
     if (layerArray.length === 1) {
-      flat = layerArray[0]
+      flat = layerArray[0];
     } else {
       flat = tf.layers.concatenate().apply(layerArray) as tf.SymbolicTensor;
     }
@@ -97,12 +115,17 @@ export class LegalLocationModel {
 
     let opt = tf.train.adam(lr);
 
+    function customLoss(yPred, yTrue) {
+      return tf.mean(tf.square(tf.maximum(tf.sub(yPred, yTrue), 0.000001)));
+      //return yPred.add(yTrue).mean();
+    }
+
     this.model.compile({
-      optimizer: opt, loss: tf.losses.meanSquaredError, // tf.losses.sigmoidCrossEntropy tf.losses.meanSquaredError
+      optimizer: opt, loss: tf.losses.meanSquaredError, //tf.losses.meanSquaredError, // customLoss
       metrics: ['accuracy', 'binaryAccuracy', 'categoricalAccuracy']
     });
 
-    this.model.summary(null, null, Log.debug);
+    //this.model.summary(null, null, Log.debug);
   }
 
   private makeFlat(x: tf.SymbolicTensor): tf.SymbolicTensor {
@@ -158,6 +181,7 @@ export class LegalLocationModel {
     confidenceLocations: Float32Array[]): Promise<tf.History> {
     // TODO: Add some logic to cancel ongoing training if we get a new call to
     // train.
+
     const batchSize: number = states.length;
     if (states.length === 0) {
       throw 'Must have at least one input value.';
@@ -188,24 +212,82 @@ export class LegalLocationModel {
     const y = tf.mul(legal, confidence);
     let history: tf.History = null;
 
+
+
+    // function onEpochEnd(epoch, logs) {
+    //   if ((this.bestLoss - logs.loss < 1E-7) || logs.acc > 0.99) {
+    //     console.log(this.model);
+    //     //this.model.stopTraining = true;
+    //     console.log(this.bestLoss, logs.loss, epoch, logs.acc)
+    //   }
+    //   this.bestLoss = Math.min(logs.loss, this.bestLoss);
+    // }
+    // class EarlyStoppingAtMinLoss extends tf.callbacks.Callback {
+
+    //   public on_epoch_end(epoch, logs) {
+    //     this.model.stop_training = true;
+    // let current = logs.get("loss")
+    // if np.less(current, self.best):
+    //     self.best = current
+    //     self.wait = 0
+    //     # Record the best weights if current results is better (less).
+    //     self.best_weights = self.model.get_weights()
+    // else:
+    //     self.wait += 1
+    //     if self.wait >= self.patience:
+    //         self.stopped_epoch = epoch
+    //         self.model.stop_training = True
+    //         print("Restoring model weights from the end of the best epoch.")
+    //         self.model.set_weights(self.best_weights)
+    //}
+
+
+    // def on_train_end(self, logs=None):
+    //     if self.stopped_epoch > 0:
+    //         print("Epoch %05d: early stopping" % (self.stopped_epoch + 1))
+    //}
+
     function myCallbacks() {
-      return tf.callbacks.earlyStopping({ monitor: 'loss', minDelta: 1E-7 })
+      return tf.callbacks.earlyStopping({ monitor: 'loss', patience: 100 })
+    }
+    let badfit = true;
+    while (badfit) {
+      let t0 = Date.now();
+      let fitting = true;
+      let bestLoss: number = 9999;
+      var accuracy;
+      this.epochs = 0;
+      while (fitting) {
+        history = await this.model.fit(
+          [...inputTensors, confidence], y, { epochs: 1 }); //, callbacks: myCallbacks()
+        let loss = Number(history.history.loss[history.history.loss.length - 1]);
+        this.epochs++;
+        accuracy = history.history.acc[history.history.acc.length - 1];
+        // console.log(`loss=${loss} bestLoss=${bestLoss}`);
+        if (((loss + 1E-9) > bestLoss) && (accuracy > 0.99)) {
+          fitting = false;
+          //log(`${loss} > ${bestLoss}`);
+          //console.log(`accuracy ${accuracy}`);
+        }
+        bestLoss = Math.min(loss, bestLoss);
+        if (this.epochs >= 1000) {
+          fitting = false;
+          `epochs ${this.epochs}`
+        }
+      }
+      let fitTime = Date.now() - t0;
+      //console.log(`It took ${fitTime} ms for ${this.epochs} epochs of ${batchSize} training examples.`);
+      if (accuracy < 0.99) {
+        this.modelLevel++;
+        //console.log(`after ${this.epochs} epochs, the accuracy is ${history.history.acc[history.history.acc.length - 1]}. Increasing to model level ${this.modelLevel}.`);
+        this.buildModel(this.stateShapes, this.locationSize);
+      }
+      else {
+        badfit = false;
+      }
     }
 
-    let t0 = Date.now();
-    history = await this.model.fit(
-      [...inputTensors, confidence], y, { epochs: 5000, callbacks: myCallbacks() }); // 
-    let fitTime = Date.now() - t0;
-    this.epochs = Math.max(...history.epoch) + 1;
-    //console.log(`It took ${fitTime} ms for ${this.epochs} epochs.`);
 
-    // for (let iteration = 0; iteration < 100; ++iteration) {
-    //   history = await this.model.fit([x, confidence], y, { epochs: 5 });
-    //   if (history.history['loss'][0] < history.history['loss'][4]) {
-    //     // Loss is increasing, so we have stopped learning.
-    //     break;
-    //   }
-    // }
     for (const x of inputTensors) {
       x.dispose();
     }

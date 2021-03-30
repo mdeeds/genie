@@ -23,6 +23,7 @@ async function testBasic() {
   const lossArray = history.history['loss'];
   console.log(lossArray.slice(-10));
   console.assert(lossArray[lossArray.length - 1] < 0.02, "testBasic");
+  console.log('Done testBasic');
 }
 
 
@@ -54,7 +55,7 @@ async function testWeighted() {
   const lossArray = history.history['loss'];
   console.log(lossArray);
   console.assert(lossArray[lossArray.length - 1] < 0.02, "testWeighted");
-  console.log('Done testBasic');
+  console.log('Done testWeighted');
 }
 
 function percentile(a: number[], percentile: number): number {
@@ -161,7 +162,7 @@ async function confidence(llm: LegalLocationModel, states: Float32Array[]) {
   return confidences;
 }
 
-async function test5val100() {
+async function testTTT() {
   // to simplify just a little, I'm not counting the token bags
   // state vecor is 2 types of tokens in 9 spots = 18 features in length
   // legal locations vector is the 9 spots
@@ -189,6 +190,7 @@ async function test5val100() {
 
   console.assert(wrong === 0, "Has misclasifications");
   console.assert(right > unsure, "Poor clasification");
+  console.log('Done testTTT');
 }
 
 async function testItterative() {
@@ -206,11 +208,12 @@ async function testItterative() {
   let unsure = 0;
 
   //for (let lr = 0.1; lr < 10; lr *= 1.01) {
-  let lr = 0.01;
-  const llm = await LegalLocationModel.make([[3, 3, 2]], 9, lr);
+  let lr = 0.1;
+
   const trainingStates: Float32Array[] = [];
   const trainningLegalLocations: Float32Array[] = [];
 
+  const llm = await LegalLocationModel.make([[3, 3, 2]], 9, lr);
 
   // find the most unclear example
   for (let i = 0; i < 100; i++) {
@@ -237,6 +240,7 @@ async function testItterative() {
   }
   console.assert(wrong === 0, "Has misclasifications");
   console.assert(right > unsure, "Poor clasification");
+  console.log('Done testItterative');
 }
 // TODO: Add tests for:
 // 1) Use TTT game, train on ~5 examples, validate on ~100 different states.
@@ -248,8 +252,8 @@ async function testItterative() {
 
 async function run() {
   await testBasic();
-  // testWeighted();
-  // test5val100();
+  await testWeighted();
+  await testTTT();
   await testItterative();
 }
 
