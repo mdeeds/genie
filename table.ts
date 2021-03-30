@@ -104,6 +104,8 @@ export class Table {
   // Indicators store and display information like who's turn it is and if the game is ended.
   private indicators: LabelIndicator[] = [];
 
+  private playerIndicator: LabelIndicator = null;
+
   // Maps token label to an index.  This is used to generate a State
   // object from the magnets.
   private tokenIndex: Map<string, number>;
@@ -149,11 +151,11 @@ export class Table {
       this.handleKeyPress(ev);
     })
 
-    const playerIndicator =
+    this.playerIndicator =
       this.addLabelIndicator(this.container, ['X to play', 'O to play'], 0, 0);
     done.addEventListener('click', (ev) => {
       this.setTrainingData();
-      playerIndicator.increment();
+      this.applyRandomMove();
     })
 
     this.addBag("X", 5, 50, 100);
@@ -183,6 +185,51 @@ export class Table {
 
     this.legalDestinationModel = await CachedLegalLocationModel.make(
       [[sampleData.length, 1]], this.magnets.length);
+    this.updateDisplay();
+  }
+
+  private randomSelectedIndex(locations: Float32Array) {
+    let count = 0;
+    for (const v of locations) {
+      if (v > 0.5) {
+        ++count;
+      }
+    }
+    if (count === 0) {
+      throw "No legal locations";
+    }
+    let selected = Math.trunc(Math.random() * count);
+    for (let i = 0; i < locations.length; ++i) {
+
+      if (locations[i] > 0.5) {
+        if (selected === 0) {
+          return i;
+        } else {
+          --selected;
+        }
+      }
+    }
+    throw "Impossible.";
+  }
+
+  async applyRandomMove() {
+    const state = this.getStateData();
+    const sources: Float32Array =
+      await this.legalSourceModel.getLegalLocations(state);
+    const destinations: Float32Array =
+      await this.legalDestinationModel.getLegalLocations(state);
+
+    const sourceIndex = this.randomSelectedIndex(sources);
+    const destinationIndex = this.randomSelectedIndex(destinations);
+
+    const sourceMagnet = this.magnets[sourceIndex];
+    const destinationMagnet = this.magnets[destinationIndex];
+
+    const token = sourceMagnet.pop();
+    destinationMagnet.add(token);
+
+    this.playerIndicator.increment();
+
     this.updateDisplay();
   }
 

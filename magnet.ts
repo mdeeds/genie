@@ -65,6 +65,8 @@ export class Magnet {
       message += t.getLabel();
     }
     token.magnet = this;
+    DocumentUtil.moveToCenter(token.getElement(),
+      this.element.getBoundingClientRect());
   }
 
   pop(): Token {
